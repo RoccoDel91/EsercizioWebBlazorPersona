@@ -1,0 +1,156 @@
+﻿@using Microsoft.AspNetCore.Components.Forms
+@using PeopleExercise.Web.Models
+@using PeopleExercise.Web.Services
+
+@if (PropertyMetadata.EffectiveType == typeof(string))
+{
+    <MudTextField T="string"
+                  Label="@PropertyMetadata.DisplayLabel"
+                  Value="@GetStringValue()"
+                  ValueChanged="OnStringChanged"
+                  Immediate="true"
+                  Required="@PropertyMetadata.IsRequired"
+                  Error="@HasErrors"
+                  ErrorText="@FirstError" />
+}
+else if (PropertyMetadata.EffectiveType == typeof(int))
+{
+    <MudNumericField T="int"
+                     Label="@PropertyMetadata.DisplayLabel"
+                     Value="@GetIntValue()"
+                     ValueChanged="OnIntChanged"
+                     Immediate="true"
+                     Error="@HasErrors"
+                     ErrorText="@FirstError" />
+}
+else if (PropertyMetadata.EffectiveType == typeof(decimal))
+{
+    <MudNumericField T="decimal"
+                     Label="@PropertyMetadata.DisplayLabel"
+                     Value="@GetDecimalValue()"
+                     ValueChanged="OnDecimalChanged"
+                     Immediate="true"
+                     Error="@HasErrors"
+                     ErrorText="@FirstError" />
+}
+else if (PropertyMetadata.EffectiveType == typeof(DateTime))
+{
+    <MudDatePicker Label="@PropertyMetadata.DisplayLabel"
+                   Date="@GetDateValue()"
+                   DateChanged="OnDateChanged"
+                   Error="@HasErrors"
+                   ErrorText="@FirstError"
+                   Editable="true" />
+}
+else if (PropertyMetadata.EffectiveType == typeof(bool))
+{
+    <MudCheckBox T="bool"
+                 Label="@PropertyMetadata.DisplayLabel"
+                 Value="@GetBoolValue()"
+                 ValueChanged="OnBoolChanged" />
+
+    @if (HasErrors)
+    {
+        <MudText Typo="Typo.caption" Color="Color.Error">@FirstError</MudText>
+    }
+}
+else
+{
+    @* TODO (Exercise): Completare mapping type->Mud control. *@
+    <MudAlert Severity="Severity.Warning" Dense="true">
+        Tipo non supportato: @PropertyMetadata.PropertyType.Name
+    </MudAlert>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public required Persona Model { get; set; }
+
+    [Parameter, EditorRequired]
+    public required PersonPropertyMetadata PropertyMetadata { get; set; }
+
+    [CascadingParameter]
+    private EditContext? CurrentEditContext { get; set; }
+
+    private FieldIdentifier FieldIdentifier => new(Model, PropertyMetadata.PropertyName);
+
+    private bool HasErrors => CurrentEditContext?.GetValidationMessages(FieldIdentifier).Any() == true;
+
+    private string? FirstError => CurrentEditContext?.GetValidationMessages(FieldIdentifier).FirstOrDefault();
+
+    private string GetStringValue()
+    {
+        return PropertyMetadata.PropertyInfo.GetValue(Model)?.ToString() ?? string.Empty;
+    }
+
+    private Task OnStringChanged(string newValue)
+    {
+        SetValue(newValue);
+        return Task.CompletedTask;
+    }
+
+    private int GetIntValue()
+    {
+        var rawValue = PropertyMetadata.PropertyInfo.GetValue(Model);
+        return rawValue is int parsedValue ? parsedValue : 0;
+    }
+
+    private Task OnIntChanged(int newValue)
+    {
+        SetValue(newValue);
+        return Task.CompletedTask;
+    }
+
+    private decimal GetDecimalValue()
+    {
+        var rawValue = PropertyMetadata.PropertyInfo.GetValue(Model);
+        return rawValue is decimal parsedValue ? parsedValue : 0M;
+    }
+
+    private Task OnDecimalChanged(decimal newValue)
+    {
+        SetValue(newValue);
+        return Task.CompletedTask;
+    }
+
+    private DateTime? GetDateValue()
+    {
+        var rawValue = PropertyMetadata.PropertyInfo.GetValue(Model);
+
+        if (rawValue is DateTime parsedValue)
+        {
+            return parsedValue;
+        }
+
+        return null;
+    }
+
+    private Task OnDateChanged(DateTime? newValue)
+    {
+        if (newValue is null && !PropertyMetadata.IsNullable)
+        {
+            newValue = DateTime.Today;
+        }
+
+        SetValue(newValue);
+        return Task.CompletedTask;
+    }
+
+    private bool GetBoolValue()
+    {
+        var rawValue = PropertyMetadata.PropertyInfo.GetValue(Model);
+        return rawValue is bool parsedValue && parsedValue;
+    }
+
+    private Task OnBoolChanged(bool newValue)
+    {
+        SetValue(newValue);
+        return Task.CompletedTask;
+    }
+
+    private void SetValue(object? newValue)
+    {
+        PropertyMetadata.PropertyInfo.SetValue(Model, newValue);
+        CurrentEditContext?.NotifyFieldChanged(FieldIdentifier);
+    }
+}

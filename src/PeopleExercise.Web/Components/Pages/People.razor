@@ -1,0 +1,100 @@
+﻿@page "/people"
+@using System.Globalization
+
+@inject IPersonStorageService PersonStorageService
+@inject IPersonSchemaService PersonSchemaService
+@inject IUserNotificationStore UserNotificationStore
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>People CRUD</PageTitle>
+
+<MudStack Spacing="2">
+    <MudText Typo="Typo.h4">People CRUD Exercise</MudText>
+
+    <MudText Typo="Typo.body2">
+        CRUD dinamico su <code>Persona</code> con storage JSON (un file per persona).
+    </MudText>
+
+    <MudAlert Severity="Severity.Info" Dense="true">
+        Starter mode: usa i TODO nel codice per guidare l esercizio.
+    </MudAlert>
+
+    <MudStack Row="true" Spacing="2">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="StartCreate">
+            Nuova Persona
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="LoadPeopleAsync">
+            Ricarica
+        </MudButton>
+    </MudStack>
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+
+    <MudPaper Class="pa-4">
+        <MudTable Items="_people" Dense="true" Hover="true" Striped="true">
+            <HeaderContent>
+                @foreach (var propertyMetadata in _displayProperties)
+                {
+                    <MudTh>@propertyMetadata.DisplayLabel</MudTh>
+                }
+                <MudTh>Azioni</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                @foreach (var propertyMetadata in _displayProperties)
+                {
+                    <MudTd DataLabel="@propertyMetadata.DisplayLabel">
+                        @GetDisplayValue(context, propertyMetadata)
+                    </MudTd>
+                }
+                <MudTd DataLabel="Azioni">
+                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => StartEdit(context))">
+                        Modifica
+                    </MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Error" OnClick="@(() => OnDeleteClickedAsync(context))">
+                        Elimina
+                    </MudButton>
+                    <MudIconButton Size="Size.Small" Icon=@Icons.Material.Filled.FolderOpen OnClick="@(() => OnOpenFileClickedAsync(context))" />
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Typo="Typo.body2">Nessuna persona salvata.</MudText>
+            </NoRecordsContent>
+        </MudTable>
+    </MudPaper>
+
+    @if (_isEditorVisible && _editContext is not null)
+    {
+        <MudPaper Class="pa-4 mt-4">
+            <MudText Typo="Typo.h6">@(_isCreating ? "Nuova Persona" : "Modifica Persona")</MudText>
+
+            <EditForm EditContext="_editContext" OnValidSubmit="SaveCurrentAsync">
+                <DataAnnotationsValidator />
+
+                <MudGrid>
+                    @foreach (var propertyMetadata in _editableProperties)
+                    {
+                        <MudItem xs="12" sm="6">
+                            <DynamicField Model="_currentPerson" PropertyMetadata="propertyMetadata" />
+                        </MudItem>
+                    }
+                </MudGrid>
+
+                <ValidationSummary />
+
+                <MudStack Row="true" Spacing="2" Class="mt-4">
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Success">
+                        Salva
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" OnClick="CancelEdit">
+                        Annulla
+                    </MudButton>
+                </MudStack>
+            </EditForm>
+        </MudPaper>
+    }
+</MudStack>
