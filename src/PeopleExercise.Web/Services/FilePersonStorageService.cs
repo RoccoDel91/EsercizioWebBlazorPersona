@@ -39,8 +39,9 @@ public sealed class FilePersonStorageService : IPersonStorageService
         _peopleDirectoryPath = Path.IsPathRooted(storageOptions.Value.PeopleDirectoryPath)
             ? storageOptions.Value.PeopleDirectoryPath
             : Path.GetFullPath(Path.Combine(environment.ContentRootPath, storageOptions.Value.PeopleDirectoryPath));
+       
     }
-    
+
     public async Task<IReadOnlyList<Persona>> GetAllAsync()
     {
         try

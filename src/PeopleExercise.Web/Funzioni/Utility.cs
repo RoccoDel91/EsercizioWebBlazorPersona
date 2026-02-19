@@ -91,9 +91,7 @@ namespace PeopleExercise.Web.Funzioni
             }
             else
             {
-                dd = "";
-                int d = 0;
-                d = dataNascita.Day;
+                int d = dataNascita.Day;
                 d = d + 40;
                 dd = d.ToString();
                 cdata = cdata + dd;
@@ -101,37 +99,12 @@ namespace PeopleExercise.Web.Funzioni
             return cdata;
         }
 
-        public string CalcoloComune()
+        public async Task CalcoloComune()
         {
-            
-
-
-
-
-
-        string path = environment.ContentRootPath
-            var jsonContent = File.ReadAllTextAsync("C:\\Lavoro\\Eserciziopersona\\src\\PeopleExercise.Web\\Data\\Comuni\\comuni_Codici.json", Encoding.UTF8);
+           
+            var jsonContent = await File.ReadAllTextAsync("C:\\Lavoro\\Eserciziopersona\\src\\PeopleExercise.Web\\Data\\Comuni\\comuni_Codici.json", Encoding.UTF8);
             string a = "";
-            //var person = JsonSerializer.Deserialize<Persona>(jsonContent);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            return ret;
+      
         }
     }
 }
