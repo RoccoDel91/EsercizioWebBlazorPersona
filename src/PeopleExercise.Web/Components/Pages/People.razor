@@ -59,6 +59,7 @@
                         Elimina
                     </MudButton>
                     <MudIconButton Size="Size.Small" Icon=@Icons.Material.Filled.FolderOpen OnClick="@(() => OnOpenFileClickedAsync(context))" />
+                    <MudButton Size="Size.Small" Icon=@Icons.Material.Filled.FolderOpen OnClick="@(() => CalcoloCodiceFiscale(context))">testing </MudButton>
                 </MudTd>
             </RowTemplate>
             <NoRecordsContent>
@@ -83,7 +84,7 @@
                         </MudItem>
                     }
                 </MudGrid>
-
+               
                 <ValidationSummary />
 
                 <MudStack Row="true" Spacing="2" Class="mt-4">
@@ -96,5 +97,6 @@
                 </MudStack>
             </EditForm>
         </MudPaper>
+        
     }
 </MudStack>

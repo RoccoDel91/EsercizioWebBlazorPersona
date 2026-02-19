@@ -5,6 +5,9 @@ using MudBlazor;
 using PeopleExercise.Web.Models;
 using PeopleExercise.Web.Services;
 using System.Globalization;
+using System.Runtime.CompilerServices;
+using PeopleExercise.Web.Funzioni;
+
 
 namespace PeopleExercise.Web.Components.Pages
 {
@@ -207,6 +210,44 @@ namespace PeopleExercise.Web.Components.Pages
 
             return cloned;
         }
+
+        public void CalcoloCodiceFiscale(Persona persona)
+        {
+            var pippo = new Utility();
+            string parzialeNome = pippo.calcoloNomeCognomeCodFiscale(persona.Nome, true);
+            string parzialeCognome = pippo.calcoloNomeCognomeCodFiscale(persona.Cognome, false);
+            string codiceFiscale = parzialeNome + parzialeCognome;
+            
+           
+            
+            //for (int i = 0; i < lun; i++)
+            //{
+
+            //    for (int j = 0; j < consonanti.Count; j++)
+            //    {
+            //        if (nome[i] == consonanti[j])
+            //        {
+            //            if (c == 1)
+            //            {
+            //                c++;
+            //                break;
+            //            }
+            //            else
+            //            {
+            //                codiceFiscale = codiceFiscale + nome[i];
+            //                c++;
+            //                j = 0;
+            //                break;
+            //            }
+            //        }
+            //    }
+            //    if (c == 4)
+            //    {
+            //        i = 102;
+            //    }
+            //}
+        }
     }
 }
+
 

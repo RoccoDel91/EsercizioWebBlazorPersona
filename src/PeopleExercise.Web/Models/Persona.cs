@@ -1,10 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using PeopleExercise.Web.Components.Pages;
+using System.ComponentModel.DataAnnotations;
 
 namespace PeopleExercise.Web.Models;
 
 public sealed class Persona
 {
     public Guid Id { get; set; } = Guid.NewGuid();
+
 
     [Required(ErrorMessage = "Il nome e obbligatorio.")]
     [StringLength(100, ErrorMessage = "Il nome non puo superare i 100 caratteri.")]
@@ -22,6 +24,16 @@ public sealed class Persona
 
     [DataType(DataType.Date)]
     public DateTime DataNascita { get; set; } = DateTime.Today;
+    
+    
+    [Required(ErrorMessage = "Il sesso è obbligatorio persona confusa.")]
+    [StringLength(1, ErrorMessage = "Il sesso non può superare un'carattere.")]
+    [RegularExpression("^[MFmf]$", ErrorMessage = "Inserire solo M o F")]
+    public string sesso { get; set; } = "";
 
-    // 
+
+    [Required(ErrorMessage = "Il Luogo di Nascita è obbligatorio.")]
+    public string LuogoDiNascita { get; set; } = "";
+    
+    public string codiceFiscale { get; set; } = "";
 }
