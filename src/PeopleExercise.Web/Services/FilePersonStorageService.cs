@@ -40,7 +40,7 @@ public sealed class FilePersonStorageService : IPersonStorageService
             ? storageOptions.Value.PeopleDirectoryPath
             : Path.GetFullPath(Path.Combine(environment.ContentRootPath, storageOptions.Value.PeopleDirectoryPath));
     }
-
+    
     public async Task<IReadOnlyList<Persona>> GetAllAsync()
     {
         try

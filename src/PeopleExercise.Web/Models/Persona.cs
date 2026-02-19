@@ -23,7 +23,7 @@ public sealed class Persona
     public decimal Reddito { get; set; }
 
     [DataType(DataType.Date)]
-    public DateTime DataNascita { get; set; } = DateTime.Today;
+    public DateTime DataNascita { get; set; }  = DateTime.MaxValue;
     
     
     [Required(ErrorMessage = "Il sesso è obbligatorio persona confusa.")]
