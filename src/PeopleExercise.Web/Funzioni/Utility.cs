@@ -121,6 +121,46 @@ namespace PeopleExercise.Web.Funzioni
         //    return codicecatastale;
         //}
 
+        public char CalcolaCarattereControllo(string primi15Caratteri)
+        {
+            if (primi15Caratteri.Length != 15)
+                throw new ArgumentException("Il codice fiscale deve contenere 15 caratteri.");
 
+            string caratteriPari = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            string caratteriDispari = "BAKPLCQDREVOSFTGUHMINJWZYX";
+
+            int[] valoriDispari = {
+            1,0,5,7,9,13,15,17,19,21, // 0-9
+            1,0,5,7,9,13,15,17,19,21,
+            2,4,18,20,11,3,6,8,12,14,
+            16,10,22,25,24,23
+        };
+
+            int somma = 0;
+
+            for (int i = 0; i < 15; i++)
+            {
+                char c = primi15Caratteri[i];
+
+                if (i % 2 == 0) // posizione dispari (1-based)
+                {
+                    if (char.IsDigit(c))
+                        somma += valoriDispari[c - '0'];
+                    else
+                        somma += valoriDispari[c - 'A' + 10];
+                }
+                else // posizione pari (1-based)
+                {
+                    if (char.IsDigit(c))
+                        somma += c - '0';
+                    else
+                        somma += c - 'A';
+                }
+            }
+
+            int resto = somma % 26;
+            return caratteriPari[resto];
+        }
     }
 }
+

@@ -222,36 +222,11 @@ namespace PeopleExercise.Web.Components.Pages
             string parzialeData = myUtility.CalcolaDataSesso(persona.DataNascita, persona.sesso);
             //string cod_comune = myUtility.CalcolaCodComune(persona.LuogoDiNascita);
             Dictionary<string,string> dizionarioComuni = comuni.CalcoloComuneAsync();
-            string codiceFiscale = parzialeNome + parzialeCognome + parzialeData+ dizionarioComuni["Arezzo"];
+            string codiceFiscale = parzialeCognome+parzialeNome + parzialeData + dizionarioComuni["Arezzo"];
+            char controllo =myUtility.CalcolaCarattereControllo(codiceFiscale.ToUpper());
+            codiceFiscale = codiceFiscale + controllo;
+            codiceFiscale=codiceFiscale.ToUpper();
             string a = "";
-
-
-            //for (int i = 0; i < lun; i++)
-            //{
-
-            //    for (int j = 0; j < consonanti.Count; j++)
-            //    {
-            //        if (nome[i] == consonanti[j])
-            //        {
-            //            if (c == 1)
-            //            {
-            //                c++;
-            //                break;
-            //            }
-            //            else
-            //            {
-            //                codiceFiscale = codiceFiscale + nome[i];
-            //                c++;
-            //                j = 0;
-            //                break;
-            //            }
-            //        }
-            //    }
-            //    if (c == 4)
-            //    {
-            //        i = 102;
-            //    }
-            //}
         }
     }
 }
