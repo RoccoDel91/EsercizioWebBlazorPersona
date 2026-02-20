@@ -2,6 +2,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Linq;
+using System.ComponentModel.DataAnnotations;
 namespace PeopleExercise.Web.Models
 
 {
@@ -12,8 +13,8 @@ namespace PeopleExercise.Web.Models
     public class Comuni
     {
 
-        public Dictionary<string, string> dizionarioComuni { get; set; }
-        private static readonly JsonSerializerOptions JsonSerializerOptions = new()
+        public  Dictionary<string, string> dizionarioComuni { get; set; } 
+        private  readonly JsonSerializerOptions JsonSerializerOptions = new()
         {
             WriteIndented = true,
             PropertyNameCaseInsensitive = true
@@ -28,7 +29,7 @@ namespace PeopleExercise.Web.Models
 
 
 
-        public async Task<Dictionary<string, string>> CalcoloComuneAsync()
+        public  async Task<Dictionary<string, string>> CalcoloComuneAsync()
         {
             var jsonContent = await File.ReadAllTextAsync(
                 @"C:\Lavoro\Eserciziopersona\src\PeopleExercise.Web\Data\Comuni\comuni_Codici.json",
@@ -39,7 +40,7 @@ namespace PeopleExercise.Web.Models
 
             // Trasformazione in Dictionary gestendo i nomi duplicati
             // Se ci sono due "Castro", prenderà il primo incontrato ed eviterà il crash
-            this.dizionarioComuni = listaComuni
+            Comuni.dizionarioComuni = listaComuni
                 .GroupBy(c => c.nome)
                 .ToDictionary(
                     g => g.Key,

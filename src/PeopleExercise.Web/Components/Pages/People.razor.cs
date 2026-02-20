@@ -216,13 +216,13 @@ namespace PeopleExercise.Web.Components.Pages
 
 
             var myUtility = new Utility();
-            myUtility.test(cane);
+            myUtility.test();
             string parzialeNome = myUtility.calcoloNomeCognomeCodFiscale(persona.Nome, true);
             string parzialeCognome = myUtility.calcoloNomeCognomeCodFiscale(persona.Cognome, false);
             string parzialeData = myUtility.CalcolaDataSesso(persona.DataNascita, persona.sesso);
             string cod_comune = myUtility.CalcolaCodComune(persona.LuogoDiNascita);
             string codiceFiscale = parzialeNome + parzialeCognome + parzialeData+ cod_comune;
-
+            string a = "";
 
 
             //for (int i = 0; i < lun; i++)
