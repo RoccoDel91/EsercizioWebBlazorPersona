@@ -99,12 +99,27 @@ namespace PeopleExercise.Web.Funzioni
             return cdata;
         }
 
-        public async Task CalcoloComune()
+        Comuni comuni = new Comuni();
+
+
+
+
+
+
+        public async Task test()
         {
-           
-            var jsonContent = await File.ReadAllTextAsync("C:\\Lavoro\\Eserciziopersona\\src\\PeopleExercise.Web\\Data\\Comuni\\comuni_Codici.json", Encoding.UTF8);
-            string a = "";
-      
+
+            await comuni.CalcoloComuneAsync();
         }
+           
+             public string CalcolaCodComune( string luogoDiNascita)
+        {
+            string codiceCatastale = "";
+
+
+            return codiceCatastale;
+        }
+   
+       
     }
 }
