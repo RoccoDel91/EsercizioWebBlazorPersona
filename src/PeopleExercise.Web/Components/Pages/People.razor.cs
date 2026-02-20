@@ -213,7 +213,6 @@ namespace PeopleExercise.Web.Components.Pages
 
         public void CalcoloCodiceFiscale(Persona persona)
         {
-
             Comuni comuni = new ();
             var myUtility = new Utility();
             myUtility.test();
@@ -226,7 +225,6 @@ namespace PeopleExercise.Web.Components.Pages
             char controllo =myUtility.CalcolaCarattereControllo(codiceFiscale.ToUpper());
             codiceFiscale = codiceFiscale + controllo;
             codiceFiscale=codiceFiscale.ToUpper();
-            string a = "";
         }
     }
 }
