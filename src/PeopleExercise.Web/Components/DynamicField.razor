@@ -9,6 +9,7 @@
                   Value="@GetStringValue()"
                   ValueChanged="OnStringChanged"
                   Immediate="true"
+                  ReadOnly="@(PropertyMetadata.PropertyName == "codiceFiscale")"
                   Required="@PropertyMetadata.IsRequired"
                   Error="@HasErrors"
                   ErrorText="@FirstError" />

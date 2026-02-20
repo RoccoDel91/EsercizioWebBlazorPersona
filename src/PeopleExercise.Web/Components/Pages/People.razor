@@ -79,9 +79,12 @@
                 <MudGrid>
                     @foreach (var propertyMetadata in _editableProperties)
                     {
+                        
+                        
                         <MudItem xs="12" sm="6">
-                            <DynamicField Model="_currentPerson" PropertyMetadata="propertyMetadata" />
-                        </MudItem>
+                           <DynamicField Model="_currentPerson" PropertyMetadata="propertyMetadata" />
+                          
+                        </MudItem> 
                     }
                 </MudGrid>
                

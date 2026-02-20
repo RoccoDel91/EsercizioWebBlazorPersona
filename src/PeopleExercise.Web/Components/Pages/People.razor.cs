@@ -14,13 +14,13 @@ namespace PeopleExercise.Web.Components.Pages
     public partial class People
     {
         private readonly List<Persona> _people = [];
-
+        
         private IReadOnlyList<PersonPropertyMetadata> _displayProperties = Array.Empty<PersonPropertyMetadata>();
         private IReadOnlyList<PersonPropertyMetadata> _editableProperties = Array.Empty<PersonPropertyMetadata>();
 
         private Persona _currentPerson = new();
         private EditContext? _editContext;
-
+   
         private bool _isCreating = true;
         private bool _isEditorVisible;
         private bool _isLoading;

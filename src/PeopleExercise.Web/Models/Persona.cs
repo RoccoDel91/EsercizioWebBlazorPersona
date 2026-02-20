@@ -1,4 +1,5 @@
 ﻿using PeopleExercise.Web.Components.Pages;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace PeopleExercise.Web.Models;
@@ -34,6 +35,6 @@ public sealed class Persona
 
     [Required(ErrorMessage = "Il Luogo di Nascita è obbligatorio.")]
     public string LuogoDiNascita { get; set; } = "";
-    
-    public string codiceFiscale { get; set; } = "";
+
+    public string codiceFiscale { get; set; }="";
 }

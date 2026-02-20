@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using PeopleExercise.Web.Models;
 
@@ -27,13 +28,17 @@ public sealed class ReflectionPersonSchemaService : IPersonSchemaService
             {
                 PropertyName = property.Name,
                 PropertyType = property.PropertyType,
-                IsEditable = property.Name != nameof(Persona.Id),
+                IsEditable = property.Name != nameof(Persona.Id)|| property.Name != nameof(Persona.codiceFiscale),
                 DisplayLabel = ResolveDisplayLabel(property),
                 IsRequired = property.GetCustomAttribute<RequiredAttribute>() is not null,
-                PropertyInfo = property
+                PropertyInfo = property,
+                Ised=property.Name== nameof(Persona.codiceFiscale),
+
             })
             .ToArray();
     }
+
+
 
     private static string ResolveDisplayLabel(PropertyInfo propertyInfo)
     {
