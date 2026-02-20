@@ -17,7 +17,7 @@ namespace PeopleExercise.Web.Funzioni
     public class Utility
     {
 
-
+        Comuni comuni = new Comuni();
         public string calcoloNomeCognomeCodFiscale(string nomeOCongnome, bool isNome)
         {
             string ret = "";
@@ -110,15 +110,14 @@ namespace PeopleExercise.Web.Funzioni
 
         public async Task test()
         {
-
-            await Comuni.CalcoloComuneAsync();
+             comuni.CalcoloComuneAsync();
         }
            
              public string CalcolaCodComune( string luogoDiNascita)
         {
             string codiceCatastale = "";
 
-            codiceCatastale = Comuni.dizionarioComuni[luogoDiNascita];
+            codiceCatastale = comuni.dizionarioComuni[luogoDiNascita];
             return codiceCatastale;
         }
    

@@ -13,6 +13,8 @@ namespace PeopleExercise.Web.Models
     public class Comuni
     {
 
+        
+        List <Comune> listaComuni { get; set; }
         public  Dictionary<string, string> dizionarioComuni { get; set; } 
         private  readonly JsonSerializerOptions JsonSerializerOptions = new()
         {
@@ -29,18 +31,19 @@ namespace PeopleExercise.Web.Models
 
 
 
-        public  async Task<Dictionary<string, string>> CalcoloComuneAsync()
+        public  Dictionary<string, string> CalcoloComuneAsync()
         {
-            var jsonContent = await File.ReadAllTextAsync(
-                @"C:\Lavoro\Eserciziopersona\src\PeopleExercise.Web\Data\Comuni\comuni_Codici.json",
+            var jsonContent =  File.ReadAllText(@"C:\Lavoro\Personale\src\PeopleExercise.Web\Data\Comuni\comuni_Codici.json",
                 Encoding.UTF8);
 
             // Deserializziamo come List perché il tuo JSON inizia con [ (quadra)
             var listaComuni = JsonSerializer.Deserialize<List<Comune>>(jsonContent, JsonSerializerOptions);
 
+
+
             // Trasformazione in Dictionary gestendo i nomi duplicati
             // Se ci sono due "Castro", prenderà il primo incontrato ed eviterà il crash
-            Comuni.dizionarioComuni = listaComuni
+            dizionarioComuni = listaComuni
                 .GroupBy(c => c.nome)
                 .ToDictionary(
                     g => g.Key,
