@@ -112,15 +112,15 @@ namespace PeopleExercise.Web.Funzioni
         {
              comuni.CalcoloComuneAsync();
         }
-           
-             public string CalcolaCodComune( string luogoDiNascita)
-        {
-            string codiceCatastale = "";
 
-            codiceCatastale = comuni.dizionarioComuni[luogoDiNascita];
-            return codiceCatastale;
-        }
-   
-       
+        //public string calcolacodcomune(string luogodinascita)
+        //{
+        //    string codicecatastale = "";
+
+        //    codicecatastale = comuni.dizionariocomuni[luogodinascita];
+        //    return codicecatastale;
+        //}
+
+
     }
 }

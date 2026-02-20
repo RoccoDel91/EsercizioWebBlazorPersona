@@ -220,7 +220,7 @@ namespace PeopleExercise.Web.Components.Pages
             string parzialeNome = myUtility.calcoloNomeCognomeCodFiscale(persona.Nome, true);
             string parzialeCognome = myUtility.calcoloNomeCognomeCodFiscale(persona.Cognome, false);
             string parzialeData = myUtility.CalcolaDataSesso(persona.DataNascita, persona.sesso);
-            string cod_comune = myUtility.CalcolaCodComune(persona.LuogoDiNascita);
+            //string cod_comune = myUtility.CalcolaCodComune(persona.LuogoDiNascita);
             Dictionary<string,string> dizionarioComuni = comuni.CalcoloComuneAsync();
             string codiceFiscale = parzialeNome + parzialeCognome + parzialeData+ dizionarioComuni["Arezzo"];
             string a = "";

@@ -33,9 +33,9 @@ namespace PeopleExercise.Web.Models
 
         public  Dictionary<string, string> CalcoloComuneAsync()
         {
-            var jsonContent =  File.ReadAllText(@"C:\Lavoro\Personale\src\PeopleExercise.Web\Data\Comuni\comuni_Codici.json",
+            var jsonContent =  File.ReadAllText("C:\\Lavoro\\Eserciziopersona\\src\\PeopleExercise.Web\\Data\\Comuni\\comuni_Codici.json",
                 Encoding.UTF8);
-
+            
             // Deserializziamo come List perché il tuo JSON inizia con [ (quadra)
             var listaComuni = JsonSerializer.Deserialize<List<Comune>>(jsonContent, JsonSerializerOptions);
 
