@@ -16,7 +16,7 @@ namespace PeopleExercise.Web.Components.Pages
         private readonly List<Persona> _people = [];
         
         private IReadOnlyList<PersonPropertyMetadata> _displayProperties = Array.Empty<PersonPropertyMetadata>();
-        private IReadOnlyList<PersonPropertyMetadata> _editableProperties = Array.Empty<PersonPropertyMetadata>();
+        private IReadOnlyList<PersonPropertyMetadata> _visibleProperties = Array.Empty<PersonPropertyMetadata>();
 
         private Persona _currentPerson = new();
         private EditContext? _editContext;
@@ -29,7 +29,7 @@ namespace PeopleExercise.Web.Components.Pages
         {
             var properties = PersonSchemaService.GetPersonProperties();
             _displayProperties = properties;
-            _editableProperties = properties.Where(propertyMetadata => propertyMetadata.IsEditable).ToArray();
+            _visibleProperties = properties.Where(propertyMetadata => propertyMetadata.IsVisible).ToArray();
 
             await LoadPeopleAsync();
         }

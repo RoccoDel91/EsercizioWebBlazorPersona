@@ -28,12 +28,12 @@ public sealed class ReflectionPersonSchemaService : IPersonSchemaService
             {
                 PropertyName = property.Name,
                 PropertyType = property.PropertyType,
-                IsEditable = property.Name != nameof(Persona.Id)|| property.Name != nameof(Persona.codiceFiscale),
+                IsVisible = property.Name != nameof(Persona.Id),
+                IsEditable = property.Name != nameof(Persona.Id) && property.Name != nameof(Persona.codiceFiscale),
                 DisplayLabel = ResolveDisplayLabel(property),
                 IsRequired = property.GetCustomAttribute<RequiredAttribute>() is not null,
+                RequiredErrorMessage = property.GetCustomAttribute<RequiredAttribute>()?.ErrorMessage,
                 PropertyInfo = property,
-                Ised=property.Name== nameof(Persona.codiceFiscale),
-
             })
             .ToArray();
     }

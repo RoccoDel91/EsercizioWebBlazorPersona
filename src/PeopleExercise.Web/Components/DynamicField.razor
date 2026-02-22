@@ -4,13 +4,14 @@
 
 @if (PropertyMetadata.EffectiveType == typeof(string))
 {
-    <MudTextField T="string"
+    <MudTextField T="string" 
                   Label="@PropertyMetadata.DisplayLabel"
                   Value="@GetStringValue()"
                   ValueChanged="OnStringChanged"
                   Immediate="true"
-                  ReadOnly="@(PropertyMetadata.PropertyName == "codiceFiscale")"
+                  ReadOnly="@(!PropertyMetadata.IsEditable)"
                   Required="@PropertyMetadata.IsRequired"
+                  RequiredError="@PropertyMetadata.RequiredErrorMessage"
                   Error="@HasErrors"
                   ErrorText="@FirstError" />
 }

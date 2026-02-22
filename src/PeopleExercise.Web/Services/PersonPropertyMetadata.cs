@@ -11,11 +11,14 @@ public sealed class PersonPropertyMetadata
 
     public required bool IsEditable { get; init; }
 
+    public required bool IsVisible { get; init; }
+
     public required string DisplayLabel { get; init; }
 
     public required bool IsRequired { get; init; }
-    public required bool Ised { get; init; }
 
+    public string? RequiredErrorMessage {get; init; }
+    
     public required PropertyInfo PropertyInfo { get; init; }
     public Type NotEditable => ReadOnlyAttribute.Yes.GetType();
 

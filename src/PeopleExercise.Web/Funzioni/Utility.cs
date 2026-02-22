@@ -3,7 +3,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using PeopleExercise.Web.Components.Pages;
 using PeopleExercise.Web.Configuration;
-using PeopleExercise.Web.Configuration;
 using PeopleExercise.Web.Models;
 using PeopleExercise.Web.Services;
 using System;
