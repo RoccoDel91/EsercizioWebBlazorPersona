@@ -1,0 +1,101 @@
+.todo-page ::deep .todo-task-list {
+    margin-top: 1rem;
+}
+
+.todo-page ::deep .todo-task-card {
+    border: 1px solid rgba(15, 23, 42, 0.18);
+    border-left: 6px solid transparent;
+    border-radius: 12px;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
+    transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.todo-page ::deep .todo-task-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 28px rgba(15, 23, 42, 0.16);
+}
+
+.todo-page ::deep .todo-task-card-available {
+    border-left-color: #2e7d32;
+    background: linear-gradient(180deg, #f7fff8 0%, #e3f7e6 100%);
+}
+
+.todo-page ::deep .todo-task-card-ongoing {
+    border-left-color: #f59e0b;
+    background: linear-gradient(180deg, #fffdf7 0%, #fef3c7 100%);
+    box-shadow: 0 10px 22px rgba(180, 125, 8, 0.2);
+}
+
+.todo-page ::deep .todo-task-card-ready {
+    border-left-color: #dc2626;
+    background: linear-gradient(180deg, #fff5f5 0%, #fee2e2 100%);
+    box-shadow: 0 10px 22px rgba(178, 25, 25, 0.2);
+}
+
+.todo-page ::deep .todo-task-card-completed {
+    border-left-color: #1f8b4c;
+    background: linear-gradient(180deg, #f4fff6 0%, #dbf5df 100%);
+}
+
+.todo-page ::deep .todo-task-card .mud-card-content {
+    padding: 1rem 1.15rem;
+}
+
+.todo-page ::deep .todo-task-row {
+    width: 100%;
+    gap: 1.2rem;
+}
+
+.todo-page ::deep .todo-task-content {
+    min-width: 280px;
+}
+
+.todo-page ::deep .todo-task-actions {
+    min-width: 240px;
+}
+
+.todo-page ::deep .todo-suggest-btn {
+    border-radius: 10px;
+    padding: 0.45rem 1rem;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    font-weight: 600;
+    box-shadow: 0 5px 12px rgba(30, 41, 59, 0.35);
+    transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+}
+
+.todo-page ::deep .todo-suggest-btn:not(.mud-disabled) {
+    background: #16a34a;
+    color: #ffffff;
+    box-shadow: 0 6px 14px rgba(22, 163, 74, 0.4);
+}
+
+.todo-page ::deep .todo-suggest-btn:not(.mud-disabled):hover {
+    transform: translateY(-1px);
+    filter: brightness(1.05);
+    box-shadow: 0 8px 16px rgba(22, 163, 74, 0.45);
+}
+
+.todo-page ::deep .todo-suggest-btn:not(.mud-disabled):active {
+    transform: translateY(1px);
+    box-shadow: 0 3px 9px rgba(22, 163, 74, 0.32);
+}
+
+.todo-page ::deep .todo-suggest-btn.mud-disabled {
+    background: #e5e7eb;
+    color: #111111;
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.1);
+}
+
+@media (max-width: 960px) {
+    .todo-page ::deep .todo-task-row {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+
+    .todo-page ::deep .todo-task-actions {
+        width: 100%;
+        min-width: 0;
+        align-items: flex-start !important;
+    }
+}

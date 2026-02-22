@@ -1,0 +1,435 @@
+@page "/toDo"
+@implements IDisposable
+@inject ITodoStorageService TodoStorageService
+@inject NavigationManager NavigationManager
+
+<div class="todo-page">
+<MudPaper Class="pa-4">
+  
+    @if (_showTaskCreateForm)
+    {
+        <MudPaper Class="pa-4 mb-4" Outlined="true">
+            <MudText Typo="Typo.h6" Class="mb-2">Nuovo task</MudText>
+
+            <MudGrid>
+                <MudItem xs="12" md="5">
+                    <MudTextField T="string"
+                                  Label="Obbiettivo"
+                                  Value="@_newTaskObbiettivo"
+                                  ValueChanged="OnNewTaskObbiettivoChanged"
+                                  Immediate="true"
+                                  Required="true" />
+                </MudItem>
+
+                <MudItem xs="12" md="4">
+                    <MudTextField T="string"
+                                  Label="Hook guida"
+                                  Value="@_newTaskHookToGuide"
+                                  ValueChanged="OnNewTaskHookChanged"
+                                  Immediate="true"
+                                  Placeholder="todo.ui" />
+                </MudItem>
+
+                <MudItem xs="12" md="2">
+                    <MudCheckBox T="bool"
+                                 Value="@_newTaskOnGoing"
+                                 ValueChanged="OnNewTaskOnGoingChanged"
+                                 Label="OnGoing" />
+                </MudItem>
+
+                <MudItem xs="12" md="1" Class="d-flex align-center">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               OnClick="AddNewTaskAsync">
+                        Aggiungi
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+
+            @if (!string.IsNullOrWhiteSpace(_newTaskError))
+            {
+                <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-2">
+                    @_newTaskError
+                </MudAlert>
+            }
+        </MudPaper>
+    }
+
+    <MudTabs>
+        <MudTabPanel Text=@($"Task Disponibili ({AvailableTasksCount})")>
+            <MudStack Spacing="2" Class="todo-task-list">
+                @foreach (var task in AvailableTasks.ToList())
+                {
+                    var canSuggest = CanSuggestSolution(task);
+                    <MudCard @key="task.Id" Class="@GetTaskCardClass(task)">
+                        <MudCardContent>
+                            <MudStack Row="true"
+                                      AlignItems="AlignItems.Center"
+                                      Justify="Justify.SpaceBetween"
+                                      Class="todo-task-row">
+                                <MudStack Spacing="0" Class="todo-task-content">
+                                    <MudCheckBox T="bool"
+                                                 Value="@task.Completato"
+                                                 ValueChanged="@(value => OnTaskCheckedChanged(task, value))"
+                                                 Label="@task.Obbiettivo" />
+
+                                    <MudCheckBox T="bool"
+                                                 Value="@task.OnGoing"
+                                                 ValueChanged="@(value => OnOnGoingChanged(task, value))"
+                                                 Color="Color.Info"
+                                                 Label="OnGoing"
+                                                 Disabled="@task.Completato" />
+
+                                    <MudText Typo="Typo.caption" Color="@GetOnGoingStatusColor(task)">
+                                        @GetOnGoingStatusText(task)
+                                    </MudText>
+                                </MudStack>
+
+                                <MudStack Spacing="1" AlignItems="AlignItems.End" Class="todo-task-actions">
+                                    <MudButton Variant="Variant.Filled"
+                                               Class="todo-suggest-btn"
+                                               Disabled="@(!canSuggest)"
+                                               OnClick="@(() => OnSuggestSolutionClicked(task))">
+                                        Suggerisci soluzione
+                                    </MudButton>
+
+                                    @if (!canSuggest)
+                                    {
+                                        <MudText Typo="Typo.caption" Color="Color.Warning">
+                                            Disponibile dopo 1h di OnGoing.
+                                        </MudText>
+                                    }
+                                </MudStack>
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                }
+
+                @if (!AvailableTasks.Any())
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Nessun task disponibile.
+                    </MudText>
+                }
+            </MudStack>
+        </MudTabPanel>
+
+        <MudTabPanel Text=@($"Task Conclusi ({CompletedTasksCount})")>
+            <MudStack Spacing="2" Class="todo-task-list">
+                @foreach (var task in CompletedTasks.ToList())
+                {
+                    var canSuggest = CanSuggestSolution(task);
+                    <MudCard @key="task.Id" Class="@GetTaskCardClass(task)">
+                        <MudCardContent>
+                            <MudStack Row="true"
+                                      AlignItems="AlignItems.Center"
+                                      Justify="Justify.SpaceBetween"
+                                      Class="todo-task-row">
+                                <MudStack Spacing="0" Class="todo-task-content">
+                                    <MudCheckBox T="bool"
+                                                 Value="@task.Completato"
+                                                 ValueChanged="@(value => OnTaskCheckedChanged(task, value))"
+                                                 Label="@task.Obbiettivo" />
+
+                                    <MudCheckBox T="bool"
+                                                 Value="@task.OnGoing"
+                                                 ValueChanged="@(value => OnOnGoingChanged(task, value))"
+                                                 Color="Color.Info"
+                                                 Label="OnGoing"
+                                                 Disabled="true" />
+
+                                    <MudText Typo="Typo.caption" Color="@GetOnGoingStatusColor(task)">
+                                        @GetOnGoingStatusText(task)
+                                    </MudText>
+                                </MudStack>
+
+                                <MudStack Spacing="1" AlignItems="AlignItems.End" Class="todo-task-actions">
+                                    <MudButton Variant="Variant.Filled"
+                                               Class="todo-suggest-btn"
+                                               Disabled="@(!canSuggest)"
+                                               OnClick="@(() => OnSuggestSolutionClicked(task))">
+                                        Suggerisci soluzione
+                                    </MudButton>
+
+                                    @if (!canSuggest)
+                                    {
+                                        <MudText Typo="Typo.caption" Color="Color.Warning">
+                                            Disponibile dopo 1h di OnGoing.
+                                        </MudText>
+                                    }
+                                </MudStack>
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                }
+
+                @if (!CompletedTasks.Any())
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Nessun task concluso.
+                    </MudText>
+                }
+            </MudStack>
+        </MudTabPanel>
+    </MudTabs>
+</MudPaper>
+</div>
+
+@code {
+    private bool _showTaskCreateForm = false;
+    private List<TodoTaskItem> _tasks = [];
+    private CancellationTokenSource? _clockCancellationTokenSource;
+    private PeriodicTimer? _clockTimer;
+    private string _newTaskObbiettivo = string.Empty;
+    private string _newTaskHookToGuide = "todo.ui";
+    private bool _newTaskOnGoing;
+    private string? _newTaskError;
+    private IEnumerable<TodoTaskItem> AvailableTasks => _tasks.Where(task => !task.Completato);
+    private IEnumerable<TodoTaskItem> CompletedTasks => _tasks.Where(task => task.Completato);
+    private int AvailableTasksCount => _tasks.Count(task => !task.Completato);
+    private int CompletedTasksCount => _tasks.Count(task => task.Completato);
+
+    protected override async Task OnInitializedAsync()
+    {
+        _tasks = (await TodoStorageService.GetTasksAsync()).ToList();
+        StartClockRefresh();
+    }
+
+    private void StartClockRefresh()
+    {
+        _clockCancellationTokenSource = new CancellationTokenSource();
+        _clockTimer = new PeriodicTimer(TimeSpan.FromSeconds(30));
+        _ = RunClockRefreshAsync(_clockCancellationTokenSource.Token);
+    }
+
+    private async Task RunClockRefreshAsync(CancellationToken cancellationToken)
+    {
+        if (_clockTimer is null)
+        {
+            return;
+        }
+
+        try
+        {
+            while (await _clockTimer.WaitForNextTickAsync(cancellationToken))
+            {
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // No-op: expected when component is disposed.
+        }
+    }
+
+    private async Task OnTaskCheckedChanged(TodoTaskItem task, bool isChecked)
+    {
+        if (task.Completato == isChecked)
+        {
+            return;
+        }
+
+        task.Completato = isChecked;
+
+        if (isChecked)
+        {
+            ApplyOnGoingChange(task, false, DateTimeOffset.UtcNow);
+        }
+
+        await TodoStorageService.UpdateTaskAsync(task);
+    }
+
+    private Task OnNewTaskObbiettivoChanged(string value)
+    {
+        _newTaskObbiettivo = value;
+        return Task.CompletedTask;
+    }
+
+    private Task OnNewTaskHookChanged(string value)
+    {
+        _newTaskHookToGuide = value;
+        return Task.CompletedTask;
+    }
+
+    private Task OnNewTaskOnGoingChanged(bool value)
+    {
+        _newTaskOnGoing = value;
+        return Task.CompletedTask;
+    }
+
+    private async Task AddNewTaskAsync()
+    {
+        var obbiettivo = _newTaskObbiettivo.Trim();
+        if (string.IsNullOrWhiteSpace(obbiettivo))
+        {
+            _newTaskError = "Inserisci un obbiettivo valido.";
+            return;
+        }
+
+        _newTaskError = null;
+
+        var newTask = new TodoTaskItem
+        {
+            Obbiettivo = obbiettivo,
+            HookToGuide = string.IsNullOrWhiteSpace(_newTaskHookToGuide) ? "todo.ui" : _newTaskHookToGuide.Trim(),
+            Completato = false,
+            OnGoing = _newTaskOnGoing,
+            TempoDiLavoro = new TempoDiLavoro
+            {
+                Sessioni = []
+            }
+        };
+
+        await TodoStorageService.AddNewTaskAsync(newTask);
+        _tasks.Add(newTask);
+
+        _newTaskObbiettivo = string.Empty;
+        _newTaskHookToGuide = "todo.ui";
+        _newTaskOnGoing = false;
+    }
+
+    private async Task OnOnGoingChanged(TodoTaskItem task, bool isChecked)
+    {
+        if (task.Completato)
+        {
+            return;
+        }
+
+        ApplyOnGoingChange(task, isChecked, DateTimeOffset.UtcNow);
+        await TodoStorageService.UpdateTaskAsync(task);
+    }
+
+    private Task OnSuggestSolutionClicked(TodoTaskItem task)
+    {
+        var hook = Uri.EscapeDataString(task.HookToGuide);
+        NavigationManager.NavigateTo($"/guide-hint/{hook}");
+        return Task.CompletedTask;
+    }
+
+    private static IntervalloLavoro? GetActiveSession(TodoTaskItem task)
+    {
+        return task.TempoDiLavoro?.Sessioni?.LastOrDefault(session => session.TimeStop is null);
+    }
+
+    private static void ApplyOnGoingChange(TodoTaskItem task, bool isChecked, DateTimeOffset timestamp)
+    {
+        task.TempoDiLavoro ??= new TempoDiLavoro();
+        task.TempoDiLavoro.Sessioni ??= [];
+
+        if (isChecked)
+        {
+            task.OnGoing = true;
+            var activeSession = GetActiveSession(task);
+            if (activeSession is null)
+            {
+                task.TempoDiLavoro.Sessioni.Add(new IntervalloLavoro
+                {
+                    TimeStart = timestamp
+                });
+            }
+
+            return;
+        }
+
+        task.OnGoing = false;
+        var openSession = GetActiveSession(task);
+        if (openSession is not null && openSession.TimeStop is null)
+        {
+            openSession.TimeStop = timestamp;
+        }
+    }
+
+    private static TimeSpan GetTotalWorkedDuration(TodoTaskItem task)
+    {
+        if (task.TempoDiLavoro?.Sessioni is null || task.TempoDiLavoro.Sessioni.Count == 0)
+        {
+            return TimeSpan.Zero;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        TimeSpan total = TimeSpan.Zero;
+
+        foreach (var session in task.TempoDiLavoro.Sessioni)
+        {
+            var sessionEnd = session.TimeStop ?? (task.OnGoing ? now : session.TimeStart);
+            if (sessionEnd <= session.TimeStart)
+            {
+                continue;
+            }
+
+            total += sessionEnd - session.TimeStart;
+        }
+
+        return total;
+    }
+
+    private static bool CanSuggestSolution(TodoTaskItem task)
+    {
+        return GetTotalWorkedDuration(task) >= TimeSpan.FromHours(1);
+    }
+
+    private static string GetTaskCardClass(TodoTaskItem task)
+    {
+        if (task.Completato)
+        {
+            return "todo-task-card todo-task-card-completed";
+        }
+
+        if (task.OnGoing)
+        {
+            return CanSuggestSolution(task)
+                ? "todo-task-card todo-task-card-ready"
+                : "todo-task-card todo-task-card-ongoing";
+        }
+
+        return "todo-task-card todo-task-card-available";
+    }
+
+    private static string GetOnGoingStatusText(TodoTaskItem task)
+    {
+        var totalDuration = GetTotalWorkedDuration(task);
+
+        if (task.Completato)
+        {
+            return totalDuration > TimeSpan.Zero
+                ? $"Stato: concluso. Tempo lavorato: {FormatDuration(totalDuration)}."
+                : "Stato: concluso.";
+        }
+
+        if (!task.OnGoing)
+        {
+            return totalDuration > TimeSpan.Zero
+                ? $"Stato: non in corso. Tempo lavorato: {FormatDuration(totalDuration)}."
+                : "Stato: non in corso.";
+        }
+
+        return $"OnGoing - tempo totale: {FormatDuration(totalDuration)}.";
+    }
+
+    private static Color GetOnGoingStatusColor(TodoTaskItem task)
+    {
+        if (task.Completato)
+        {
+            return Color.Success;
+        }
+
+        if (!task.OnGoing)
+        {
+            return Color.Success;
+        }
+
+        return CanSuggestSolution(task) ? Color.Error : Color.Warning;
+    }
+
+    private static string FormatDuration(TimeSpan duration)
+    {
+        return $"{(int)duration.TotalHours:00}:{duration.Minutes:00}:{duration.Seconds:00}";
+    }
+
+    public void Dispose()
+    {
+        _clockCancellationTokenSource?.Cancel();
+        _clockTimer?.Dispose();
+        _clockCancellationTokenSource?.Dispose();
+    }
+}

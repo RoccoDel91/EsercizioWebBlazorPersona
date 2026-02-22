@@ -16,6 +16,10 @@ builder.Services.Configure<StorageOptions>(
 builder.Services.AddScoped<IUserNotificationStore, UserNotificationStore>();
 builder.Services.AddScoped<IPersonStorageService, FilePersonStorageService>();
 builder.Services.AddScoped<IPersonSchemaService, ReflectionPersonSchemaService>();
+builder.Services.AddScoped<ITodoStorageService, FileTodoStorageService>();
+builder.Services.AddScoped<IGuideHintService, FileGuideHintService>();
+
+
 
 var app = builder.Build();
 
