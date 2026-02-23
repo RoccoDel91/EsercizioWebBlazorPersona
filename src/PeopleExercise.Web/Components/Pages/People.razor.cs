@@ -24,7 +24,8 @@ namespace PeopleExercise.Web.Components.Pages
         private bool _isCreating = true;
         private bool _isEditorVisible;
         private bool _isLoading;
-
+        private const int MaxComuniSuggestions = 50;
+        private IReadOnlyList<string> _nomiComuni = Array.Empty<string>();
         protected override async Task OnInitializedAsync()
         {
             var properties = PersonSchemaService.GetPersonProperties();
@@ -211,22 +212,65 @@ namespace PeopleExercise.Web.Components.Pages
             return cloned;
         }
 
-        public void CalcoloCodiceFiscale(Persona persona)
+        private async Task CalcoloCodiceFiscale(Persona persona)
         {
-            Comuni comuni = new ();
-            var myUtility = new Utility();
-            myUtility.test();
-            string parzialeNome = myUtility.calcoloNomeCognomeCodFiscale(persona.Nome, true);
-            string parzialeCognome = myUtility.calcoloNomeCognomeCodFiscale(persona.Cognome, false);
-            string parzialeData = myUtility.CalcolaDataSesso(persona.DataNascita, persona.sesso);
-            //string cod_comune = myUtility.CalcolaCodComune(persona.LuogoDiNascita);
-            Dictionary<string,string> dizionarioComuni = comuni.CalcoloComuneAsync();
-            string codiceFiscale = parzialeCognome+parzialeNome + parzialeData + dizionarioComuni["Arezzo"];
-            char controllo =myUtility.CalcolaCarattereControllo(codiceFiscale.ToUpper());
-            codiceFiscale = codiceFiscale + controllo;
-            codiceFiscale=codiceFiscale.ToUpper();
+            var utility = new Utility();
+            var parzialeNome = utility.calcoloNomeCognomeCodFiscale(persona.Nome, true);
+            var parzialeCognome = utility.calcoloNomeCognomeCodFiscale(persona.Cognome, false);
+            var parzialeData = utility.CalcolaDataSesso(persona.DataNascita, persona.sesso.ToUpperInvariant());
+
+            var dizionarioComuni = await ComuniStorageService.GetComuniAsync();
+            if (!dizionarioComuni.TryGetValue(persona.LuogoDiNascita, out var codiceComune))
+            {
+                Snackbar.Add("Comune non trovato nel file comuni.", Severity.Warning);
+                return;
+            }
+
+            var parziale = (parzialeCognome + parzialeNome + parzialeData + codiceComune).ToUpperInvariant();
+            var controllo = utility.CalcolaCarattereControllo(parziale);
+            persona.codiceFiscale = parziale + controllo;
         }
+
+        private async Task OnDatiCambiati()
+        {
+            if (string.IsNullOrWhiteSpace(_currentPerson.Nome) ||
+                string.IsNullOrWhiteSpace(_currentPerson.Cognome) ||
+                string.IsNullOrWhiteSpace(_currentPerson.sesso) ||
+                _currentPerson.DataNascita == DateTime.MaxValue ||
+                string.IsNullOrWhiteSpace(_currentPerson.LuogoDiNascita) ||
+                _currentPerson.Eta <= 0)
+            {
+                return;
+            }
+
+            await CalcoloCodiceFiscale(_currentPerson);
+            StateHasChanged();
+        }
+
+        private Task<IEnumerable<string>> SearchComuniAsync(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                IEnumerable<string> defaultResults = _nomiComuni.Take(MaxComuniSuggestions);
+                return Task.FromResult(defaultResults);
+            }
+
+            IEnumerable<string> filteredResults = _nomiComuni
+                .Where(nome => nome.Contains(value, StringComparison.OrdinalIgnoreCase))
+                .Take(MaxComuniSuggestions);
+
+            return Task.FromResult(filteredResults);
+        }
+
+        private async Task OnLuogoDiNascitaChanged(string? value)
+        {
+            _currentPerson.LuogoDiNascita = value ?? string.Empty;
+            await OnDatiCambiati();
+        }
+
+
     }
 }
+    
 
 

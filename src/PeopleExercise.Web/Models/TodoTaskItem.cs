@@ -16,6 +16,9 @@ public sealed class TodoTaskItem
     [JsonPropertyName("onGoing")]
     public bool OnGoing { get; set; }
 
+    [JsonPropertyName("noTimer")]
+    public bool NoTimer { get; set; }
+
     [JsonPropertyName("tempoDiLavoro")]
     public TempoDiLavoro TempoDiLavoro { get; set; } = new();
 

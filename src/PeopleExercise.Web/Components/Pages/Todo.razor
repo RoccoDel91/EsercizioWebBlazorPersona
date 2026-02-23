@@ -73,12 +73,15 @@
                                                  ValueChanged="@(value => OnTaskCheckedChanged(task, value))"
                                                  Label="@task.Obbiettivo" />
 
-                                    <MudCheckBox T="bool"
-                                                 Value="@task.OnGoing"
-                                                 ValueChanged="@(value => OnOnGoingChanged(task, value))"
-                                                 Color="Color.Info"
-                                                 Label="OnGoing"
-                                                 Disabled="@task.Completato" />
+                                    @if (!task.NoTimer)
+                                    {
+                                        <MudCheckBox T="bool"
+                                                     Value="@task.OnGoing"
+                                                     ValueChanged="@(value => OnOnGoingChanged(task, value))"
+                                                     Color="Color.Info"
+                                                     Label="OnGoing"
+                                                     Disabled="@task.Completato" />
+                                    }
 
                                     <MudText Typo="Typo.caption" Color="@GetOnGoingStatusColor(task)">
                                         @GetOnGoingStatusText(task)
@@ -131,12 +134,15 @@
                                                  ValueChanged="@(value => OnTaskCheckedChanged(task, value))"
                                                  Label="@task.Obbiettivo" />
 
-                                    <MudCheckBox T="bool"
-                                                 Value="@task.OnGoing"
-                                                 ValueChanged="@(value => OnOnGoingChanged(task, value))"
-                                                 Color="Color.Info"
-                                                 Label="OnGoing"
-                                                 Disabled="true" />
+                                    @if (!task.NoTimer)
+                                    {
+                                        <MudCheckBox T="bool"
+                                                     Value="@task.OnGoing"
+                                                     ValueChanged="@(value => OnOnGoingChanged(task, value))"
+                                                     Color="Color.Info"
+                                                     Label="OnGoing"
+                                                     Disabled="true" />
+                                    }
 
                                     <MudText Typo="Typo.caption" Color="@GetOnGoingStatusColor(task)">
                                         @GetOnGoingStatusText(task)
@@ -365,6 +371,11 @@
 
     private static bool CanSuggestSolution(TodoTaskItem task)
     {
+        if (task.NoTimer)
+        {
+            return true;
+        }
+
         return GetTotalWorkedDuration(task) >= TimeSpan.FromHours(1);
     }
 

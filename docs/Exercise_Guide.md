@@ -481,3 +481,224 @@ CHECK FINALE
 3. Compila i 6 campi richiesti.
 4. Verifica che il CF si auto compili.
 <!-- HOOK:todo.codicefiscale.auto:END -->
+
+<!-- HOOK:todo.comuni.istanze.audit:START -->
+TASK 3 - Audit istanziazioni `Comuni` (superflue + errori di compilazione)
+
+Obiettivo finale:
+1. Trovare tutte le `new Comuni()` nel progetto.
+2. Capire quali sono superflue.
+3. Sostituire gli usi errati con il servizio già iniettato (`ComuniStorageService`).
+4. Tornare a compilazione pulita sugli errori bloccanti.
+
+Contesto importante:
+- La classe `Comuni` ha costruttore con parametro obbligatorio:
+  - `public Comuni(IWebHostEnvironment env)`
+- Quindi `new Comuni()` senza argomenti produce errore.
+
+PASSO 1 - Trova tutte le istanziazioni
+Apri terminale nella root del progetto ed esegui:
+
+```powershell
+rg -n "new\\s+Comuni\\(" src/PeopleExercise.Web
+```
+
+Devi trovare (al momento):
+1. `src/PeopleExercise.Web/Funzioni/Utility.cs`
+2. `src/PeopleExercise.Web/Components/Pages/People.razor.cs` (più di un punto)
+
+PASSO 2 - Rimuovi l'istanza superflua in `Utility`
+File: `src/PeopleExercise.Web/Funzioni/Utility.cs`
+
+Rimuovi:
+
+```csharp
+Comuni comuni = new Comuni();
+```
+
+Perché è superflua:
+- `Utility` non deve possedere dipendenze file/hosting.
+- la funzione `test()` chiama `comuni.CalcoloComuneAsync()` ma non restituisce nulla utile.
+
+PASSO 3 - Rimuovi o commenta il metodo `test()` non usato
+Stesso file (`Utility.cs`), rimuovi:
+
+```csharp
+public async Task test()
+{
+    comuni.CalcoloComuneAsync();
+}
+```
+
+Se vuoi tenerlo come promemoria studente, commentalo invece di eliminarlo.
+
+PASSO 4 - Correggi `People.razor.cs` (prima istanza)
+File: `src/PeopleExercise.Web/Components/Pages/People.razor.cs`
+
+Nel metodo `CalcoloCodiceFiscale(Persona persona)`:
+- elimina `Comuni comuni = new();`
+- elimina `myUtility.test();`
+- sostituisci il caricamento comuni con il servizio:
+
+```csharp
+var dizionarioComuni = await ComuniStorageService.GetComuniAsync();
+if (!dizionarioComuni.TryGetValue(persona.LuogoDiNascita, out var codiceComune))
+{
+    Snackbar.Add("Comune non trovato nel file comuni.", Severity.Warning);
+    return;
+}
+```
+
+e usa `codiceComune` al posto di `dizionarioComuni["Arezzo"]`.
+
+PASSO 5 - Correggi `People.razor.cs` (seconda istanza)
+Nel metodo `OnDatiCambiati()`:
+- elimina:
+
+```csharp
+var comuniSvc = new Comuni();
+var dizionario = comuniSvc.CalcoloComuneAsync();
+```
+
+- sostituisci con accesso a `ComuniStorageService` (stesso schema del passo 4).
+
+Nota:
+- `OnDatiCambiati()` usa dati esterni, quindi conviene portarlo ad `async Task` e gestire chiamate async.
+
+PASSO 6 - Allinea firma async dove necessario
+Se `CalcoloCodiceFiscale` chiama `ComuniStorageService.GetComuniAsync()`, aggiorna la firma:
+
+```csharp
+public async Task CalcoloCodiceFiscale(Persona persona)
+{
+    // logica
+}
+```
+
+Se è richiamato da UI (`OnClick`), usa:
+
+```razor
+OnClick="@(() => CalcoloCodiceFiscale(context))"
+```
+
+MudBlazor gestisce `Task` come callback async.
+
+PASSO 7 - Verifica compilazione
+Esegui:
+
+```powershell
+dotnet msbuild src/PeopleExercise.Web/PeopleExercise.Web.csproj /t:Compile /nologo
+```
+
+Risultato atteso:
+- spariscono gli errori `CS7036` legati a `Comuni.Comuni(IWebHostEnvironment)`.
+
+CHECK FINALE
+1. Nessuna `new Comuni()` rimasta.
+2. Recupero comuni solo via `ComuniStorageService`.
+3. Nessun hardcode `"Arezzo"` nel calcolo codice fiscale.
+4. Build senza errori bloccanti su `Comuni`.
+<!-- HOOK:todo.comuni.istanze.audit:END -->
+
+<!-- HOOK:todo.comuni.render.performance:START -->
+TASK 4 - Perché `i` cresce sempre e perché la pagina rallenta con i comuni
+
+Obiettivo:
+1. Capire il problema reale del rallentamento.
+2. Capire perché `i` sembra crescere all'infinito.
+3. Applicare la soluzione corretta (`MudAutocomplete` con ricerca filtrata).
+
+Spiegazione chiara del problema:
+1. Nel codice c'era una `MudSelect` con un ciclo su `_nomiComuni`:
+   - i comuni sono circa 7900+ elementi;
+   - ogni elemento genera un `MudSelectItem`.
+2. Blazor ricalcola il markup ad ogni render (input, validazione, cambi stato, ecc.).
+3. Quindi il ciclo viene rieseguito spesso e il contatore `i` viene incrementato tante volte:
+   - non è uno stato globale che esplode;
+   - è il risultato di molti render + ciclo molto grande.
+4. Cambiare il testo da `@nomeComune` a `@i` NON risolve:
+   - il costo resta il render di migliaia di item.
+5. Il vero fix è ridurre i nodi renderizzati:
+   - usare `MudAutocomplete`;
+   - mostrare solo risultati filtrati (es. massimo 50).
+
+PASSO 1 - Sostituisci `MudSelect` con `MudAutocomplete`
+File: `src/PeopleExercise.Web/Components/Pages/People.razor`
+
+Nel ramo `LuogoDiNascita`, usa questo blocco:
+
+```razor
+<MudAutocomplete T="string"
+                 Label="@propertyMetadata.DisplayLabel"
+                 Value="@_currentPerson.LuogoDiNascita"
+                 ValueChanged="OnLuogoDiNascitaChanged"
+                 SearchFunc="SearchComuniAsync"
+                 MinCharacters="2"
+                 MaxItems="50"
+                 DebounceInterval="250"
+                 Clearable="true"
+                 ResetValueOnEmptyText="true"
+                 Required="true" />
+```
+
+Rimuovi:
+- `int i = 0;`
+- il `foreach` interno con `MudSelectItem`.
+
+PASSO 2 - Aggiungi limite suggerimenti
+File: `src/PeopleExercise.Web/Components/Pages/People.razor.cs`
+
+Aggiungi nel blocco campi:
+
+```csharp
+private const int MaxComuniSuggestions = 50;
+```
+
+PASSO 3 - Aggiungi metodo filtro comuni
+Stesso file (`People.razor.cs`), aggiungi:
+
+```csharp
+private Task<IEnumerable<string>> SearchComuniAsync(string value)
+{
+    if (string.IsNullOrWhiteSpace(value))
+    {
+        IEnumerable<string> defaultResults = _nomiComuni.Take(MaxComuniSuggestions);
+        return Task.FromResult(defaultResults);
+    }
+
+    IEnumerable<string> filteredResults = _nomiComuni
+        .Where(nome => nome.Contains(value, StringComparison.OrdinalIgnoreCase))
+        .Take(MaxComuniSuggestions);
+
+    return Task.FromResult(filteredResults);
+}
+```
+
+PASSO 4 - Aggancia il cambio valore del comune
+Sempre in `People.razor.cs`, aggiungi:
+
+```csharp
+private async Task OnLuogoDiNascitaChanged(string? value)
+{
+    _currentPerson.LuogoDiNascita = value ?? string.Empty;
+    await OnDatiCambiati();
+}
+```
+
+Questo mantiene il trigger del calcolo codice fiscale quando cambia il comune.
+
+PASSO 5 - Verifica compilazione
+Esegui:
+
+```powershell
+dotnet msbuild src/PeopleExercise.Web/PeopleExercise.Web.csproj /t:Compile /nologo
+```
+
+CHECK FINALE
+1. Apri `/people`.
+2. Vai su `Nuova Persona`.
+3. Campo `LuogoDiNascita` deve essere autocomplete (non tendina enorme).
+4. Scrivendo ad esempio `monte` la lista deve essere veloce.
+5. Non deve più comparire il comportamento del contatore `i`.
+6. Se compili i campi necessari, il calcolo CF deve continuare a funzionare.
+<!-- HOOK:todo.comuni.render.performance:END -->

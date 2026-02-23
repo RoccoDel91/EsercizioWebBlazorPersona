@@ -79,12 +79,26 @@
                 <MudGrid>
                     @foreach (var propertyMetadata in _visibleProperties)
                     {
-                        
-                        
                         <MudItem xs="12" sm="6">
-                           <DynamicField Model="_currentPerson" PropertyMetadata="propertyMetadata" />
-                          
-                        </MudItem> 
+                            @if (propertyMetadata.PropertyName == nameof(Persona.LuogoDiNascita))
+                            {
+                                <MudAutocomplete T="string"
+                                                 Label="@propertyMetadata.DisplayLabel"
+                                                 Value="@_currentPerson.LuogoDiNascita"
+                                                 ValueChanged="OnLuogoDiNascitaChanged"
+                                                 SearchFunc="SearchComuniAsync"
+                                                 MinCharacters="2"
+                                                 MaxItems="50"
+                                                 DebounceInterval="250"
+                                                 Clearable="true"
+                                                 ResetValueOnEmptyText="true"
+                                                 Required="true" />
+                            }
+                            else
+                            {
+                                <DynamicField Model="_currentPerson" PropertyMetadata="propertyMetadata" />
+                            }
+                        </MudItem>
                     }
                 </MudGrid>
 

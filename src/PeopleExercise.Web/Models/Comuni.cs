@@ -13,7 +13,15 @@ namespace PeopleExercise.Web.Models
     public class Comuni
     {
 
-        
+        private readonly IWebHostEnvironment _env;
+        private const string ComuniRelativePath = "Data/Comuni/comuni_Codici.json";
+
+        // Il costruttore riceve l'ambiente dal sistema
+        public Comuni(IWebHostEnvironment env)
+        {
+            _env = env;
+        }
+
         List <Comune> listaComuni { get; set; }
         public  Dictionary<string, string> dizionarioComuni { get; set; } 
         private  readonly JsonSerializerOptions JsonSerializerOptions = new()
@@ -33,7 +41,9 @@ namespace PeopleExercise.Web.Models
 
         public  Dictionary<string, string> CalcoloComuneAsync()
         {
-            var jsonContent =  File.ReadAllText("C:\\Lavoro\\Eserciziopersona\\src\\PeopleExercise.Web\\Data\\Comuni\\comuni_Codici.json",
+            
+            var jsonPath = Path.Combine(_env.ContentRootPath, ComuniRelativePath);
+            var jsonContent =  File.ReadAllText (jsonPath,
                 Encoding.UTF8);
             
             // Deserializziamo come List perché il tuo JSON inizia con [ (quadra)
