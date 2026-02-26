@@ -5,74 +5,55 @@
 @inject ISnackbar Snackbar
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
-    <MudStack Spacing="6">
+    <MudPaper Elevation="4" Class="pa-6">
+        <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-6">Bacheca Suggerimenti 💡</MudText>
 
-        @* SEZIONE 1: INVIO SUGGERIMENTO *@
-        <MudPaper Elevation="4" Class="pa-6">
-            <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-4">
-                <MudIcon Icon="@Icons.Material.Filled.Lightbulb" Color="Color.Primary" Class="mr-2" />
-                Inviaci un Suggerimento 💡
-            </MudText>
+        <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6" Color="Color.Info" Centered="true" Border="true">
 
-            @if (!formInviato)
-            {
-                <MudGrid>
-                    <MudItem xs="12" sm="12">
-                        <MudTextField @bind-Value="nomeUtente" Label="Il tuo Nome" Variant="Variant.Outlined" FullWidth="true" />
-                    </MudItem>
-                    <MudItem xs="12">
-                        <MudTextField @bind-Value="messaggio" Label="Descrivi il tuo suggerimento" Variant="Variant.Outlined" Lines="4" FullWidth="true" />
-                    </MudItem>
-                    <MudItem xs="12" Class="d-flex justify-center">
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" OnClick="SalvaInJson" Class="px-12">
-                            Invia Suggerimento
-                        </MudButton>
-                    </MudItem>
-                </MudGrid>
-            }
-            else
-            {
-                <MudAlert Severity="Severity.Success" Variant="Variant.Filled" Action="@(new Action(ResetForm))" ActionText="Invia un altro">
-                    Grazie @nomePrecedente! Il tuo suggerimento è stato registrato con successo.
-                </MudAlert>
-            }
-        </MudPaper>
+            <MudTabPanel Text="@(isEditing ? "Modifica Idea" : "Invia Idea")" Icon="@Icons.Material.Filled.Lightbulb">
+                <MudPaper Elevation="0" Class="pa-4">
+                    <MudStack Spacing="4">
+                        <MudTextField @bind-Value="nome" Label="Nome" Variant="Variant.Outlined" FullWidth="true" />
+                        <MudTextField @bind-Value="messaggio" Label="Suggerimento" Variant="Variant.Outlined" Lines="5" FullWidth="true" />
+                        <div class="d-flex gap-4">
+                            <MudButton Variant="Variant.Filled" Color="isEditing? Color.Warning: Color.Info" Size="Size.Large" OnClick="SalvaSuggerimento" FullWidth="true">
+                                @(isEditing ? "Aggiorna Idea" : "Salva Suggerimento")
+                            </MudButton>
+                            @if (isEditing)
+                            {
+                                <MudButton Variant="Variant.Outlined" OnClick="AnnullaModifica">Annulla</MudButton>
+                            }
+                        </div>
+                    </MudStack>
+                </MudPaper>
+            </MudTabPanel>
 
-        @* SEZIONE 2: BACHECA SUGGERIMENTI *@
-        <MudPaper Elevation="2" Class="pa-6">
-            <MudText Typo="Typo.h5" Class="mb-4">
-                <MudIcon Icon="@Icons.Material.Filled.History" Class="mr-2" />
-                Suggerimenti Ricevuti
-            </MudText>
-
-            <MudTable Items="@listaSuggerimenti" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@loading" Dense="true" Elevation="0">
-                <HeaderContent>
-                    <MudTh>ID</MudTh>
-                    <MudTh>Data</MudTh>
-                    <MudTh>Nome</MudTh>
-                    <MudTh>Suggerimento</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="ID"><MudChip Size="Size.Small" Variant="Variant.Text">@context.Id</MudChip></MudTd>
-                    <MudTd DataLabel="Data">@context.Data.ToShortDateString()</MudTd>
-                    <MudTd DataLabel="Nome"><b>@context.Nome</b></MudTd>
-                    <MudTd DataLabel="Suggerimento">@context.Messaggio</MudTd>
-                </RowTemplate>
-                <NoRecordsContent>
-                    <MudText>Nessun suggerimento presente nella bacheca.</MudText>
-                </NoRecordsContent>
-            </MudTable>
-        </MudPaper>
-
-    </MudStack>
+            <MudTabPanel Text="Lista Idee" Icon="@Icons.Material.Filled.FormatListBulleted">
+                <MudTable Items="@listaSuggerimenti" Hover="true" Dense="true" Height="400px" FixedHeader="true">
+                    <HeaderContent>
+                        <MudTh>Data</MudTh>
+                        <MudTh>Autore</MudTh>
+                        <MudTh>Suggerimento</MudTh>
+                        <MudTh Style="text-align:right">Azioni</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>@context.Data.ToShortDateString()</MudTd>
+                        <MudTd><b>@context.Nome</b></MudTd>
+                        <MudTd>@context.Messaggio</MudTd>
+                        <MudTd Style="text-align:right">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Info" Size="Size.Small" OnClick="@(() => PreparaModifica(context))" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => EliminaRiga(context.Id))" />
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudTabPanel>
+        </MudTabs>
+    </MudPaper>
 </MudContainer>
 
 @code {
-    private string nomeUtente;
-    private string messaggio;
-    private bool formInviato = false;
-    private bool loading = true;
-    private string nomePrecedente;
+    private string nome, messaggio, editId;
+    private bool isEditing = false;
     private List<SuggerimentoItem> listaSuggerimenti = new();
 
     public class SuggerimentoItem
@@ -83,81 +64,56 @@
         public DateTime Data { get; set; }
     }
 
-    private void ResetForm()
+    protected override async Task OnInitializedAsync() => await CaricaDati();
+
+    private async Task CaricaDati()
     {
-        nomeUtente = "";
-        messaggio = "";
-        formInviato = false;
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        await CaricaSuggerimenti();
-    }
-
-    private async Task CaricaSuggerimenti()
-    {
-        loading = true;
-        try
+        var path = Path.Combine(Env.ContentRootPath, "Data", "suggerimenti", "suggerimenti_history.json");
+        if (File.Exists(path))
         {
-            var filePath = Path.Combine(Env.ContentRootPath, "Data", "feedbacks", "feedback_history.json");
-            if (File.Exists(filePath))
-            {
-                string json = await File.ReadAllTextAsync(filePath);
-                listaSuggerimenti = JsonSerializer.Deserialize<List<SuggerimentoItem>>(json) ?? new();
-                listaSuggerimenti = listaSuggerimenti.OrderByDescending(f => f.Data).ToList();
-            }
-        }
-        catch (Exception ex) { Console.WriteLine(ex.Message); }
-        finally { loading = false; }
-    }
-
-    private async Task SalvaInJson()
-    {
-        if (string.IsNullOrWhiteSpace(nomeUtente))
-        {
-            Snackbar.Add("Il nome è obbligatorio!", Severity.Warning);
-            return;
-        }
-
-        try
-        {
-            var folderPath = Path.Combine(Env.ContentRootPath, "Data", "feedbacks");
-            var filePath = Path.Combine(folderPath, "feedback_history.json");
-
-            if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
-
-            nomePrecedente = nomeUtente;
-
-            var nuovo = new SuggerimentoItem
-            {
-                Id = Guid.NewGuid().ToString().Substring(0, 8),
-                Nome = nomeUtente,
-                Messaggio = messaggio,
-                Data = DateTime.Now
-            };
-
-            List<SuggerimentoItem> listaAttuale = new();
-            if (File.Exists(filePath))
-            {
-                string jsonVecchio = await File.ReadAllTextAsync(filePath);
-                if (!string.IsNullOrWhiteSpace(jsonVecchio))
-                {
-                    listaAttuale = JsonSerializer.Deserialize<List<SuggerimentoItem>>(jsonVecchio) ?? new();
-                }
-            }
-
-            listaAttuale.Insert(0, nuovo);
-            var opzioni = new JsonSerializerOptions { WriteIndented = true };
-            await File.WriteAllTextAsync(filePath, JsonSerializer.Serialize(listaAttuale, opzioni));
-
-            listaSuggerimenti = listaAttuale.OrderByDescending(f => f.Data).ToList();
-            formInviato = true;
-            Snackbar.Add("Suggerimento inviato!", Severity.Success);
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Errore: {ex.Message}", Severity.Error);
+            var json = await File.ReadAllTextAsync(path);
+            listaSuggerimenti = JsonSerializer.Deserialize<List<SuggerimentoItem>>(json) ?? new();
+            listaSuggerimenti = listaSuggerimenti.OrderByDescending(f => f.Data).ToList();
         }
     }
+
+    private async Task SalvaSuggerimento()
+    {
+        if (string.IsNullOrWhiteSpace(nome)) return;
+        if (isEditing)
+        {
+            var item = listaSuggerimenti.FirstOrDefault(x => x.Id == editId);
+            if (item != null) { item.Nome = nome; item.Messaggio = messaggio; }
+            isEditing = false;
+        }
+        else
+        {
+            listaSuggerimenti.Insert(0, new SuggerimentoItem { Id = Guid.NewGuid().ToString(), Nome = nome, Messaggio = messaggio, Data = DateTime.Now });
+        }
+        await SalvaSuFile();
+        nome = ""; messaggio = "";
+        Snackbar.Add("Salvato!", Severity.Info);
+    }
+
+    private void PreparaModifica(SuggerimentoItem item)
+    {
+        nome = item.Nome; messaggio = item.Messaggio; editId = item.Id; isEditing = true;
+        Snackbar.Add("Modifica pronta nel primo Tab", Severity.Info);
+    }
+
+    private async Task EliminaRiga(string id)
+    {
+        listaSuggerimenti.RemoveAll(x => x.Id == id);
+        await SalvaSuFile();
+        Snackbar.Add("Eliminato", Severity.Error);
+    }
+
+    private async Task SalvaSuFile()
+    {
+        var folder = Path.Combine(Env.ContentRootPath, "Data", "suggerimenti");
+        if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+        await File.WriteAllTextAsync(Path.Combine(folder, "suggerimenti_history.json"), JsonSerializer.Serialize(listaSuggerimenti, new JsonSerializerOptions { WriteIndented = true }));
+    }
+
+    private void AnnullaModifica() { isEditing = false; nome = ""; messaggio = ""; }
 }
