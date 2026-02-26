@@ -6,8 +6,9 @@ namespace PeopleExercise.Web.Models;
 
 public sealed class Persona
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
-
+    // MODIFICA: Da Guid a string. 
+    // Inizializziamo a string.Empty perché verrà popolato dal Codice Fiscale
+    public string Id { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Il nome è obbligatorio.")]
     [StringLength(100, ErrorMessage = "Il nome non puo superare i 100 caratteri.")]
@@ -24,17 +25,15 @@ public sealed class Persona
     public decimal Reddito { get; set; }
 
     [DataType(DataType.Date)]
-    public DateTime DataNascita { get; set; }  = DateTime.MaxValue;
-    
-    
-    [Required(ErrorMessage = "Il sesso è obbligatorio persona confusa.")]
-    [StringLength(1, ErrorMessage = "Il sesso non può superare un'carattere.")]
+    public DateTime DataNascita { get; set; } = DateTime.MaxValue;
+
+    [Required(ErrorMessage = "Il sesso è obbligatorio.")]
+    [StringLength(1, ErrorMessage = "Il sesso non può superare un carattere.")]
     [RegularExpression("^[MFmf]$", ErrorMessage = "Inserire solo M o F")]
     public string sesso { get; set; } = "";
-
 
     [Required(ErrorMessage = "Il Luogo di Nascita è obbligatorio.")]
     public string LuogoDiNascita { get; set; } = "";
 
-    public string codiceFiscale { get; set; }="";
+    public string codiceFiscale { get; set; } = "";
 }

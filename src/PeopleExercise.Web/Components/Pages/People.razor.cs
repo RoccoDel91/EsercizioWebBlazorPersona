@@ -30,8 +30,15 @@ namespace PeopleExercise.Web.Components.Pages
         protected override async Task OnInitializedAsync()
         {
             var properties = PersonSchemaService.GetPersonProperties();
-            _displayProperties = properties;
-            _visibleProperties = properties.Where(propertyMetadata => propertyMetadata.IsVisible).ToArray();
+
+            // Filtriamo subito escludendo l'Id
+            var filteredProperties = properties
+                .Where(p => p.IsVisible && p.PropertyInfo.Name != nameof(Persona.Id))
+                .ToArray();
+
+            // Assegniamo la lista PULITA a entrambe
+            _displayProperties = filteredProperties;
+            _visibleProperties = filteredProperties;
 
             await LoadComuniAsync();
             await LoadPeopleAsync();
@@ -101,16 +108,20 @@ namespace PeopleExercise.Web.Components.Pages
         {
             try
             {
+                // Sincronizziamo l'ID col codice fiscale prima del salvataggio
+                if (!string.IsNullOrWhiteSpace(_currentPerson.codiceFiscale))
+                {
+                    _currentPerson.Id = _currentPerson.codiceFiscale;
+                }
+
                 await PersonStorageService.SaveAsync(_currentPerson);
                 Snackbar.Add("Persona salvata correttamente.", Severity.Success);
-
                 _isEditorVisible = false;
                 await LoadPeopleAsync();
             }
-            catch (PersonStorageException storageException)
+            catch (Exception ex)
             {
-                // TODO (Exercise): Gestire eccezioni I/O con snackbar.
-                Snackbar.Add(storageException.UserMessage, Severity.Error);
+                Snackbar.Add("Errore durante il salvataggio.", Severity.Error);
             }
         }
 

@@ -39,14 +39,16 @@
     <MudPaper Class="pa-4">
         <MudTable Items="_people" Dense="true" Hover="true" Striped="true">
             <HeaderContent>
-                @foreach (var propertyMetadata in _displayProperties)
+                @* CAMBIATO: Usiamo _visibleProperties per escludere l'ID *@
+                @foreach (var propertyMetadata in _visibleProperties)
                 {
                     <MudTh>@propertyMetadata.DisplayLabel</MudTh>
                 }
                 <MudTh>Azioni</MudTh>
             </HeaderContent>
             <RowTemplate>
-                @foreach (var propertyMetadata in _displayProperties)
+                @* CAMBIATO: Usiamo _visibleProperties anche qui *@
+                @foreach (var propertyMetadata in _visibleProperties)
                 {
                     <MudTd DataLabel="@propertyMetadata.DisplayLabel">
                         @GetDisplayValue(context, propertyMetadata)

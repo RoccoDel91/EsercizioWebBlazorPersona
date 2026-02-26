@@ -6,12 +6,14 @@ public interface IPersonStorageService
 {
     Task<IReadOnlyList<Persona>> GetAllAsync();
 
-    Task<Persona?> GetByIdAsync(Guid id);
+    // CAMBIATO: da Guid a string
+    Task<Persona?> GetByIdAsync(string id);
 
     Task SaveAsync(Persona person);
 
-    Task DeleteAsync(Guid id);
+    // CAMBIATO: da Guid a string
+    Task DeleteAsync(string id);
 
-    Task OpenFilePath(Guid id);
+    // CAMBIATO: da Guid a string
+    Task OpenFilePath(string id);
 }
-    
