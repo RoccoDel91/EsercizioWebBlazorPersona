@@ -9,11 +9,11 @@ public sealed class Persona
     public Guid Id { get; set; } = Guid.NewGuid();
 
 
-    [Required(ErrorMessage = "Il nome e obbligatorio.")]
+    [Required(ErrorMessage = "Il nome è obbligatorio.")]
     [StringLength(100, ErrorMessage = "Il nome non puo superare i 100 caratteri.")]
     public string Nome { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Il Cognome e obbligatorio.")]
+    [Required(ErrorMessage = "Il Cognome è obbligatorio.")]
     [StringLength(100, ErrorMessage = "Il Cognome non puo superare i 100 caratteri.")]
     public string Cognome { get; set; } = string.Empty;
 

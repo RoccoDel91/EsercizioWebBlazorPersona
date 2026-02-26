@@ -32,7 +32,21 @@ namespace PeopleExercise.Web.Components.Pages
             _displayProperties = properties;
             _visibleProperties = properties.Where(propertyMetadata => propertyMetadata.IsVisible).ToArray();
 
+            await LoadComuniAsync();
             await LoadPeopleAsync();
+        }
+
+        private async Task LoadComuniAsync()
+        {
+            try
+            {
+                _nomiComuni = await ComuniStorageService.GetNomiComuniAsync();
+            }
+            catch (Exception)
+            {
+                _nomiComuni = Array.Empty<string>();
+                Snackbar.Add("Impossibile caricare la lista comuni.", Severity.Warning);
+            }
         }
 
         private async Task LoadPeopleAsync()
@@ -42,7 +56,6 @@ namespace PeopleExercise.Web.Components.Pages
             try
             {
                 var loadedPeople = await PersonStorageService.GetAllAsync();
-
                 _people.Clear();
                 _people.AddRange(loadedPeople.OrderBy(person => person.Nome, StringComparer.OrdinalIgnoreCase));
 
