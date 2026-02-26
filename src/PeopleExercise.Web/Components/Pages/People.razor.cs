@@ -215,9 +215,9 @@ namespace PeopleExercise.Web.Components.Pages
         private async Task CalcoloCodiceFiscale(Persona persona)
         {
             var utility = new Utility();
-            var parzialeNome = utility.calcoloNomeCognomeCodFiscale(persona.Nome, true);
-            var parzialeCognome = utility.calcoloNomeCognomeCodFiscale(persona.Cognome, false);
-            var parzialeData = utility.CalcolaDataSesso(persona.DataNascita, persona.sesso.ToUpperInvariant());
+            string parzialeNome = utility.calcoloNomeCognomeCodFiscale(persona.Nome, true);
+            string parzialeCognome = utility.calcoloNomeCognomeCodFiscale(persona.Cognome, false);
+            string parzialeData = utility.CalcolaDataSesso(persona.DataNascita, persona.sesso.ToUpperInvariant());
 
             var dizionarioComuni = await ComuniStorageService.GetComuniAsync();
             if (!dizionarioComuni.TryGetValue(persona.LuogoDiNascita, out var codiceComune))
@@ -226,8 +226,8 @@ namespace PeopleExercise.Web.Components.Pages
                 return;
             }
 
-            var parziale = (parzialeCognome + parzialeNome + parzialeData + codiceComune).ToUpperInvariant();
-            var controllo = utility.CalcolaCarattereControllo(parziale);
+            string parziale = (parzialeCognome + parzialeNome + parzialeData + codiceComune).ToUpperInvariant();
+            string controllo = utility.CalcolaCarattereControllo(parziale);
             persona.codiceFiscale = parziale + controllo;
         }
 

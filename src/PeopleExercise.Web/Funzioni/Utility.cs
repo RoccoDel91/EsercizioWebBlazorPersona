@@ -105,7 +105,7 @@ namespace PeopleExercise.Web.Funzioni
 
 
 
-        public char CalcolaCarattereControllo(string primi15Caratteri)
+        public string CalcolaCarattereControllo(string primi15Caratteri)
         {
             if (primi15Caratteri.Length != 15)
                 throw new ArgumentException("Il codice fiscale deve contenere 15 caratteri.");
@@ -143,7 +143,7 @@ namespace PeopleExercise.Web.Funzioni
             }
 
             int resto = somma % 26;
-            return caratteriPari[resto];
+            return caratteriPari[resto].ToString();
         }
     }
 }
