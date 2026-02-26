@@ -24,7 +24,7 @@
   {
     "id": "99999999-9999-9999-9999-999999999999",
     "obbiettivo": "Audit istanziazioni classe Comuni e rimozione usi superflui",
-    "completato": false,
+    "completato": true,
     "onGoing": false,
     "noTimer": true,
     "tempoDiLavoro": {
@@ -35,7 +35,7 @@
   {
     "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
     "obbiettivo": "Ottimizzare rendering lista Comuni (Autocomplete)",
-    "completato": false,
+    "completato": true,
     "onGoing": false,
     "noTimer": true,
     "tempoDiLavoro": {

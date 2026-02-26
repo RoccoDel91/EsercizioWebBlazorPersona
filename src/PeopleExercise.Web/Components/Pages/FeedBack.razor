@@ -1,0 +1,184 @@
+﻿@page "/feedback"
+@using System.Text.Json
+@using System.IO
+@inject IWebHostEnvironment Env
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
+    <MudStack Spacing="6">
+
+        @* SEZIONE 1: INVIO FEEDBACK *@
+        <MudPaper Elevation="4" Class="pa-6">
+            <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-4">
+                <MudIcon Icon="@Icons.Material.Filled.AddComment" Color="Color.Primary" Class="mr-2" />
+                Lasciaci un Feedback 💬
+            </MudText>
+
+            @if (!formInviato)
+            {
+                <MudGrid>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="nomeUtente" Label="Il tuo Nome" Variant="Variant.Outlined" FullWidth="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudSelect T="int" Label="Voto" @bind-Value="voto" Variant="Variant.Outlined">
+                            <MudSelectItem Value="5">⭐⭐⭐⭐⭐</MudSelectItem>
+                            <MudSelectItem Value="4">⭐⭐⭐⭐</MudSelectItem>
+                            <MudSelectItem Value="3">⭐⭐⭐</MudSelectItem>
+                            <MudSelectItem Value="2">⭐⭐</MudSelectItem>
+                            <MudSelectItem Value="1">⭐</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="messaggio" Label="Messaggio" Variant="Variant.Outlined" Lines="3" FullWidth="true" />
+                    </MudItem>
+                    <MudItem xs="12" Class="d-flex justify-center">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" OnClick="SalvaInJson" Class="px-12">
+                            Invia
+                        </MudButton>
+                    </MudItem>
+                </MudGrid>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Success" Variant="Variant.Filled" Action="@(new Action(() => formInviato = false))" ActionText="Invia un altro">
+                    Grazie! Il tuo feedback è stato registrato con successo.
+                </MudAlert>
+            }
+        </MudPaper>
+
+        @* SEZIONE 2: BACHECA SUGGERIMENTI *@
+        <MudPaper Elevation="2" Class="pa-6">
+            <MudText Typo="Typo.h5" Class="mb-4">
+                <MudIcon Icon="@Icons.Material.Filled.History" Class="mr-2" />
+                Suggerimenti Ricevuti 💡
+            </MudText>
+
+            <MudTable Items="@listaFeedback" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@loading" Dense="true" Elevation="0">
+                <HeaderContent>
+                    <MudTh>ID</MudTh>
+                    <MudTh>Data</MudTh>
+                    <MudTh>Nome</MudTh>
+                    <MudTh>Voto</MudTh>
+                    <MudTh>Messaggio</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="ID"><MudChip Size="Size.Small" Variant="Variant.Text">@context.Id</MudChip></MudTd>
+                    <MudTd DataLabel="Data">@context.Data.ToShortDateString()</MudTd>
+                    <MudTd DataLabel="Nome"><b>@context.Nome</b></MudTd>
+                    <MudTd DataLabel="Voto">
+                        @for (int i = 0; i < context.Voto; i++)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Star" Size="Size.Small" Color="Color.Warning" />
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="Messaggio">@context.Messaggio</MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudText>Nessun suggerimento presente nella bacheca.</MudText>
+                </NoRecordsContent>
+            </MudTable>
+        </MudPaper>
+
+    </MudStack>
+</MudContainer>
+
+@code {
+    private string nomeUtente;
+    private string messaggio;
+    private int voto = 5;
+    private bool formInviato = false;
+    private bool loading = true;
+    private string nomePrecedente;
+    private List<FeedbackItem> listaFeedback = new();
+
+    public class FeedbackItem
+    {
+        public string Id { get; set; }
+        public string Nome { get; set; }
+        public int Voto { get; set; }
+        public string Messaggio { get; set; }
+        public DateTime Data { get; set; }
+    }
+
+    // Metodo per pulire il form e tornare alla visualizzazione dei campi
+    private void ResetForm()
+    {
+        nomeUtente = "";
+        messaggio = "";
+        voto = 5;
+        formInviato = false; // Questo fa riapparire i campi di input
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CaricaFeedback();
+    }
+
+    private async Task CaricaFeedback()
+    {
+        loading = true;
+        try
+        {
+            var filePath = Path.Combine(Env.ContentRootPath, "Data", "feedbacks", "feedback_history.json");
+            if (File.Exists(filePath))
+            {
+                string json = await File.ReadAllTextAsync(filePath);
+                listaFeedback = JsonSerializer.Deserialize<List<FeedbackItem>>(json) ?? new();
+                listaFeedback = listaFeedback.OrderByDescending(f => f.Data).ToList();
+            }
+        }
+        catch (Exception ex) { Console.WriteLine(ex.Message); }
+        finally { loading = false; }
+    }
+
+    private async Task SalvaInJson()
+    {
+        if (string.IsNullOrWhiteSpace(nomeUtente))
+        {
+            Snackbar.Add("Nome obbligatorio!", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            var folderPath = Path.Combine(Env.ContentRootPath, "Data", "feedbacks");
+            var filePath = Path.Combine(folderPath, "feedback_history.json");
+
+            if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
+
+            nomePrecedente = nomeUtente;
+
+            var nuovo = new FeedbackItem
+            {
+                Id = Guid.NewGuid().ToString().Substring(0, 8),
+                Nome = nomeUtente,
+                Voto = voto,
+                Messaggio = messaggio,
+                Data = DateTime.Now
+            };
+
+            List<FeedbackItem> listaAttuale = new();
+            if (File.Exists(filePath))
+            {
+                string jsonVecchio = await File.ReadAllTextAsync(filePath);
+                if (!string.IsNullOrWhiteSpace(jsonVecchio))
+                {
+                    listaAttuale = JsonSerializer.Deserialize<List<FeedbackItem>>(jsonVecchio) ?? new();
+                }
+            }
+
+            listaAttuale.Insert(0, nuovo);
+            var opzioni = new JsonSerializerOptions { WriteIndented = true };
+            await File.WriteAllTextAsync(filePath, JsonSerializer.Serialize(listaAttuale, opzioni));
+
+            listaFeedback = listaAttuale.OrderByDescending(f => f.Data).ToList();
+            formInviato = true; // Nasconde i campi e mostra il messaggio di successo
+            Snackbar.Add("Feedback inviato!", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Errore: {ex.Message}", Severity.Error);
+        }
+    }
+}
