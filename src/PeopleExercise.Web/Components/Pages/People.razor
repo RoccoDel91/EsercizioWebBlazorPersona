@@ -74,7 +74,7 @@
         <MudPaper Class="pa-4 mt-4">
             <MudText Typo="Typo.h6">@(_isCreating ? "Nuova Persona" : "Modifica Persona")</MudText>
 
-            <EditForm EditContext="_editContext" OnValidSubmit="SaveCurrentAsync">
+            <EditForm EditContext="_editContext" OnValidSubmit="SaveCurrentAsync" OnInvalidSubmit="OnInvalidSubmit">
                 <DataAnnotationsValidator />
 
                 <MudGrid>
@@ -96,7 +96,9 @@
                                                  Clearable="true"
                                                  ResetValueOnEmptyText="true"
                                                  Required="@propertyMetadata.IsRequired"
-                                                 RequiredError="@propertyMetadata.RequiredErrorMessage" />
+                                                 RequiredError="@propertyMetadata.RequiredErrorMessage"
+                                                 Error="@HasFieldErrors(propertyMetadata.PropertyName)"
+                                                 ErrorText="@GetFirstFieldError(propertyMetadata.PropertyName)" />
                                 <ValidationMessage For="@(() => _currentPerson.LuogoDiNascita)" />
                             }
                             else

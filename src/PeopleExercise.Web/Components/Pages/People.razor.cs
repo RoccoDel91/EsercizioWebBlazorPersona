@@ -11,7 +11,7 @@ using PeopleExercise.Web.Funzioni;
 
 namespace PeopleExercise.Web.Components.Pages
 {
-    public partial class People
+    public partial class People : IDisposable
     {
         private readonly List<Persona> _people = [];
         
@@ -26,6 +26,7 @@ namespace PeopleExercise.Web.Components.Pages
         private bool _isLoading;
         private const int MaxComuniSuggestions = 50;
         private IReadOnlyList<string> _nomiComuni = Array.Empty<string>();
+        private IReadOnlyDictionary<string, string> _comuniByName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         protected override async Task OnInitializedAsync()
         {
             var properties = PersonSchemaService.GetPersonProperties();
@@ -40,10 +41,14 @@ namespace PeopleExercise.Web.Components.Pages
         {
             try
             {
-                _nomiComuni = await ComuniStorageService.GetNomiComuniAsync();
+                _comuniByName = await ComuniStorageService.GetComuniAsync();
+                _nomiComuni = _comuniByName.Keys
+                    .OrderBy(nomeComune => nomeComune, StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
             }
             catch (Exception)
             {
+                _comuniByName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                 _nomiComuni = Array.Empty<string>();
                 Snackbar.Add("Impossibile caricare la lista comuni.", Severity.Warning);
             }
@@ -75,7 +80,7 @@ namespace PeopleExercise.Web.Components.Pages
         {
             _isCreating = true;
             _currentPerson = new Persona();
-            _editContext = new EditContext(_currentPerson);
+            ConfigureEditContext(new EditContext(_currentPerson));
             _isEditorVisible = true;
         }
 
@@ -83,7 +88,7 @@ namespace PeopleExercise.Web.Components.Pages
         {
             _isCreating = false;
             _currentPerson = ClonePerson(person);
-            _editContext = new EditContext(_currentPerson);
+            ConfigureEditContext(new EditContext(_currentPerson));
             _isEditorVisible = true;
         }
 
@@ -107,6 +112,12 @@ namespace PeopleExercise.Web.Components.Pages
                 // TODO (Exercise): Gestire eccezioni I/O con snackbar.
                 Snackbar.Add(storageException.UserMessage, Severity.Error);
             }
+        }
+
+        private Task OnInvalidSubmit(EditContext editContext)
+        {
+            StateHasChanged();
+            return Task.CompletedTask;
         }
 
         private async Task OnDeleteClickedAsync(Persona person)
@@ -225,39 +236,38 @@ namespace PeopleExercise.Web.Components.Pages
             return cloned;
         }
 
-        private async Task CalcoloCodiceFiscale(Persona persona)
+        private Task CalcoloCodiceFiscale(Persona persona)
         {
-            var utility = new Utility();
-            string parzialeNome = utility.calcoloNomeCognomeCodFiscale(persona.Nome, true);
-            string parzialeCognome = utility.calcoloNomeCognomeCodFiscale(persona.Cognome, false);
-            string parzialeData = utility.CalcolaDataSesso(persona.DataNascita, persona.sesso.ToUpperInvariant());
-
-            var dizionarioComuni = await ComuniStorageService.GetComuniAsync();
-            if (!dizionarioComuni.TryGetValue(persona.LuogoDiNascita, out var codiceComune))
+            if (!TryBuildCodiceFiscale(persona, out var codiceFiscale))
             {
                 Snackbar.Add("Comune non trovato nel file comuni.", Severity.Warning);
-                return;
+                return Task.CompletedTask;
             }
 
-            string parziale = (parzialeCognome + parzialeNome + parzialeData + codiceComune).ToUpperInvariant();
-            string controllo = utility.CalcolaCarattereControllo(parziale);
-            persona.codiceFiscale = parziale + controllo;
+            persona.codiceFiscale = codiceFiscale;
+            return Task.CompletedTask;
         }
 
         private async Task OnDatiCambiati()
         {
-            if (string.IsNullOrWhiteSpace(_currentPerson.Nome) ||
-                string.IsNullOrWhiteSpace(_currentPerson.Cognome) ||
-                string.IsNullOrWhiteSpace(_currentPerson.sesso) ||
-                _currentPerson.DataNascita == DateTime.MaxValue ||
-                string.IsNullOrWhiteSpace(_currentPerson.LuogoDiNascita) ||
-                _currentPerson.Eta <= 0)
+            if (!CanAutoCompileCodiceFiscale())
             {
+                if (!string.IsNullOrWhiteSpace(_currentPerson.codiceFiscale))
+                {
+                    _currentPerson.codiceFiscale = string.Empty;
+                    _editContext?.NotifyFieldChanged(new FieldIdentifier(_currentPerson, nameof(Persona.codiceFiscale)));
+                }
                 return;
             }
 
-            await CalcoloCodiceFiscale(_currentPerson);
-            StateHasChanged();
+            if (TryBuildCodiceFiscale(_currentPerson, out var codiceFiscale) &&
+                !string.Equals(_currentPerson.codiceFiscale, codiceFiscale, StringComparison.Ordinal))
+            {
+                _currentPerson.codiceFiscale = codiceFiscale;
+                _editContext?.NotifyFieldChanged(new FieldIdentifier(_currentPerson, nameof(Persona.codiceFiscale)));
+            }
+
+            await InvokeAsync(StateHasChanged);
         }
 
         private Task<IEnumerable<string>> SearchComuniAsync(string value)
@@ -297,11 +307,93 @@ namespace PeopleExercise.Web.Components.Pages
             return _editContext.GetValidationMessages(fieldIdentifier).FirstOrDefault();
         }
 
-        private async Task OnLuogoDiNascitaChanged(string? value)
+        private Task OnLuogoDiNascitaChanged(string? value)
         {
-            _currentPerson.LuogoDiNascita = value ?? string.Empty;
+            _currentPerson.LuogoDiNascita = (value ?? string.Empty).Trim();
             _editContext?.NotifyFieldChanged(new FieldIdentifier(_currentPerson, nameof(Persona.LuogoDiNascita)));
-            await OnDatiCambiati();
+            return Task.CompletedTask;
+        }
+
+        private bool CanAutoCompileCodiceFiscale()
+        {
+            if (_editContext is null)
+            {
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(_currentPerson.Nome) ||
+                string.IsNullOrWhiteSpace(_currentPerson.Cognome) ||
+                string.IsNullOrWhiteSpace(_currentPerson.sesso) ||
+                string.IsNullOrWhiteSpace(_currentPerson.LuogoDiNascita) ||
+                _currentPerson.DataNascita == DateTime.MaxValue)
+            {
+                return false;
+            }
+
+            var sessoNormalized = _currentPerson.sesso.Trim().ToUpperInvariant();
+            if (sessoNormalized is not "M" and not "F")
+            {
+                return false;
+            }
+
+            if (!_comuniByName.ContainsKey(_currentPerson.LuogoDiNascita))
+            {
+                return false;
+            }
+
+            return !HasFieldErrors(nameof(Persona.Nome)) &&
+                   !HasFieldErrors(nameof(Persona.Cognome)) &&
+                   !HasFieldErrors(nameof(Persona.sesso)) &&
+                   !HasFieldErrors(nameof(Persona.LuogoDiNascita));
+        }
+
+        private bool TryBuildCodiceFiscale(Persona persona, out string codiceFiscale)
+        {
+            codiceFiscale = string.Empty;
+
+            if (!_comuniByName.TryGetValue(persona.LuogoDiNascita, out var codiceComune))
+            {
+                return false;
+            }
+
+            var utility = new Utility();
+            string parzialeNome = utility.calcoloNomeCognomeCodFiscale(persona.Nome, true);
+            string parzialeCognome = utility.calcoloNomeCognomeCodFiscale(persona.Cognome, false);
+            string parzialeData = utility.CalcolaDataSesso(persona.DataNascita, persona.sesso.ToUpperInvariant());
+
+            string parziale = (parzialeCognome + parzialeNome + parzialeData + codiceComune).ToUpperInvariant();
+            string controllo = utility.CalcolaCarattereControllo(parziale);
+            codiceFiscale = parziale + controllo;
+            return true;
+        }
+
+        private void ConfigureEditContext(EditContext editContext)
+        {
+            if (_editContext is not null)
+            {
+                _editContext.OnFieldChanged -= HandleEditContextFieldChanged;
+            }
+
+            _editContext = editContext;
+            _editContext.OnFieldChanged += HandleEditContextFieldChanged;
+        }
+
+        private void HandleEditContextFieldChanged(object? sender, FieldChangedEventArgs fieldChangedEventArgs)
+        {
+            if (fieldChangedEventArgs.FieldIdentifier.FieldName == nameof(Persona.codiceFiscale))
+            {
+                return;
+            }
+
+            _ = InvokeAsync(OnDatiCambiati);
+        }
+
+        public void Dispose()
+        {
+            if (_editContext is not null)
+            {
+                _editContext.OnFieldChanged -= HandleEditContextFieldChanged;
+            }
         }
 
 

@@ -184,7 +184,6 @@
 @code {
     private bool _showTaskCreateForm = false;
     private List<TodoTaskItem> _tasks = [];
-    private CancellationTokenSource? _clockCancellationTokenSource;
     private PeriodicTimer? _clockTimer;
     private string _newTaskObbiettivo = string.Empty;
     private string _newTaskHookToGuide = "todo.ui";
@@ -203,28 +202,29 @@
 
     private void StartClockRefresh()
     {
-        _clockCancellationTokenSource = new CancellationTokenSource();
+        _clockTimer?.Dispose();
         _clockTimer = new PeriodicTimer(TimeSpan.FromSeconds(30));
-        _ = RunClockRefreshAsync(_clockCancellationTokenSource.Token);
+        _ = RunClockRefreshAsync();
     }
 
-    private async Task RunClockRefreshAsync(CancellationToken cancellationToken)
+    private async Task RunClockRefreshAsync()
     {
-        if (_clockTimer is null)
+        var timer = _clockTimer;
+        if (timer is null)
         {
             return;
         }
 
         try
         {
-            while (await _clockTimer.WaitForNextTickAsync(cancellationToken))
+            while (await timer.WaitForNextTickAsync())
             {
                 await InvokeAsync(StateHasChanged);
             }
         }
-        catch (OperationCanceledException)
+        catch (ObjectDisposedException)
         {
-            // No-op: expected when component is disposed.
+            // No-op: expected if timer is disposed while waiting.
         }
     }
 
@@ -439,8 +439,7 @@
 
     public void Dispose()
     {
-        _clockCancellationTokenSource?.Cancel();
         _clockTimer?.Dispose();
-        _clockCancellationTokenSource?.Dispose();
+        _clockTimer = null;
     }
 }
