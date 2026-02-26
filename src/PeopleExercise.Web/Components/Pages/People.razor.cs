@@ -275,9 +275,32 @@ namespace PeopleExercise.Web.Components.Pages
             return Task.FromResult(filteredResults);
         }
 
+        private bool HasFieldErrors(string propertyName)
+        {
+            if (_editContext is null)
+            {
+                return false;
+            }
+
+            var fieldIdentifier = new FieldIdentifier(_currentPerson, propertyName);
+            return _editContext.GetValidationMessages(fieldIdentifier).Any();
+        }
+
+        private string? GetFirstFieldError(string propertyName)
+        {
+            if (_editContext is null)
+            {
+                return null;
+            }
+
+            var fieldIdentifier = new FieldIdentifier(_currentPerson, propertyName);
+            return _editContext.GetValidationMessages(fieldIdentifier).FirstOrDefault();
+        }
+
         private async Task OnLuogoDiNascitaChanged(string? value)
         {
             _currentPerson.LuogoDiNascita = value ?? string.Empty;
+            _editContext?.NotifyFieldChanged(new FieldIdentifier(_currentPerson, nameof(Persona.LuogoDiNascita)));
             await OnDatiCambiati();
         }
 

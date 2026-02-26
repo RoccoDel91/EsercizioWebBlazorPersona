@@ -85,15 +85,19 @@
                             {
                                 <MudAutocomplete T="string"
                                                  Label="@propertyMetadata.DisplayLabel"
+                                                 For="@(() => _currentPerson.LuogoDiNascita)"
                                                  Value="@_currentPerson.LuogoDiNascita"
                                                  ValueChanged="OnLuogoDiNascitaChanged"
                                                  SearchFunc="SearchComuniAsync"
-                                                 MinCharacters="2"
+                                                 MinCharacters="0"
                                                  MaxItems="50"
                                                  DebounceInterval="250"
+                                                 OpenOnFocus="true"
                                                  Clearable="true"
                                                  ResetValueOnEmptyText="true"
-                                                 Required="true" />
+                                                 Required="@propertyMetadata.IsRequired"
+                                                 RequiredError="@propertyMetadata.RequiredErrorMessage" />
+                                <ValidationMessage For="@(() => _currentPerson.LuogoDiNascita)" />
                             }
                             else
                             {

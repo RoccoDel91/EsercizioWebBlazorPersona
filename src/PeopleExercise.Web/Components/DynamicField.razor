@@ -4,16 +4,34 @@
 
 @if (PropertyMetadata.EffectiveType == typeof(string))
 {
-    <MudTextField T="string" 
-                  Label="@PropertyMetadata.DisplayLabel"
-                  Value="@GetStringValue()"
-                  ValueChanged="OnStringChanged"
-                  Immediate="true"
-                  ReadOnly="@(!PropertyMetadata.IsEditable)"
-                  Required="@PropertyMetadata.IsRequired"
-                  RequiredError="@PropertyMetadata.RequiredErrorMessage"
-                  Error="@HasErrors"
-                  ErrorText="@FirstError" />
+    @if (IsCodiceFiscaleField)
+    {
+        <div @onclick="OnCodiceFiscaleClicked">
+            <MudTextField T="string"
+                          Label="@PropertyMetadata.DisplayLabel"
+                          Value="@GetStringValue()"
+                          ValueChanged="OnStringChanged"
+                          Immediate="true"
+                          ReadOnly="@(!PropertyMetadata.IsEditable)"
+                          Required="@PropertyMetadata.IsRequired"
+                          RequiredError="@PropertyMetadata.RequiredErrorMessage"
+                          Error="@HasErrors"
+                          ErrorText="@FirstError" />
+        </div>
+    }
+    else
+    {
+        <MudTextField T="string"
+                      Label="@PropertyMetadata.DisplayLabel"
+                      Value="@GetStringValue()"
+                      ValueChanged="OnStringChanged"
+                      Immediate="true"
+                      ReadOnly="@(!PropertyMetadata.IsEditable)"
+                      Required="@PropertyMetadata.IsRequired"
+                      RequiredError="@PropertyMetadata.RequiredErrorMessage"
+                      Error="@HasErrors"
+                      ErrorText="@FirstError" />
+    }
 }
 else if (PropertyMetadata.EffectiveType == typeof(int))
 {
@@ -76,9 +94,20 @@ else
 
     private FieldIdentifier FieldIdentifier => new(Model, PropertyMetadata.PropertyName);
 
-    private bool HasErrors => CurrentEditContext?.GetValidationMessages(FieldIdentifier).Any() == true;
+    private const string CodiceFiscaleAutoCompiledMessage = "Il codice fiscale verrà compliato automaticamente";
+    private bool _showCodiceFiscaleMessage;
 
-    private string? FirstError => CurrentEditContext?.GetValidationMessages(FieldIdentifier).FirstOrDefault();
+    private bool IsCodiceFiscaleField => PropertyMetadata.PropertyName == nameof(Persona.codiceFiscale);
+
+    private bool HasValidationErrors => CurrentEditContext?.GetValidationMessages(FieldIdentifier).Any() == true;
+
+    private string? FirstValidationError => CurrentEditContext?.GetValidationMessages(FieldIdentifier).FirstOrDefault();
+
+    private bool HasErrors => HasValidationErrors || _showCodiceFiscaleMessage;
+
+    private string? FirstError => _showCodiceFiscaleMessage
+        ? CodiceFiscaleAutoCompiledMessage
+        : FirstValidationError;
 
     private string GetStringValue()
     {
@@ -154,5 +183,10 @@ else
     {
         PropertyMetadata.PropertyInfo.SetValue(Model, newValue);
         CurrentEditContext?.NotifyFieldChanged(FieldIdentifier);
+    }
+
+    private void OnCodiceFiscaleClicked()
+    {
+        _showCodiceFiscaleMessage = true;
     }
 }
