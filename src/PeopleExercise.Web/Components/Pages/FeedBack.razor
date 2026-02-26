@@ -5,15 +5,30 @@
 @inject ISnackbar Snackbar
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
-    <MudPaper Elevation="4" Class="pa-6">
-        <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-6">Gestione Feedback ⭐</MudText>
-
-        <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6" Color="Color.Primary" Centered="true" Border="true">
+    <MudPaper Elevation="1" Class="pa-0">
+        @* Configurazione per tasti chiari:
+           - Elevation="0" e Outlined="false" per togliere l'effetto card interna
+           - Centered="false" (default) per allinearli a sinistra come in foto
+           - SliderColor="Color.Secondary" per la linea viola sotto
+           - Color="Color.Default" per mantenere il testo inattivo neutro
+        *@
+        <MudTabs Elevation="0"
+                 Rounded="false"
+                 ApplyEffectsToContainer="true"
+                 PanelClass="pa-6 mt-2"
+                 Color="Color.Default"
+                 SliderColor="Color.Secondary"
+                 ActiveTabClass="mud-primary-text mud-tab-active-bold">
 
             @* --- TAB 1: INVIO / MODIFICA --- *@
-            <MudTabPanel Text="@(isEditing ? "Modifica Feedback" : "Invia Feedback")" Icon="@Icons.Material.Filled.AddComment">
-                <MudPaper Elevation="0" Class="pa-4">
+            <MudTabPanel Text="@(isEditing ? $"MODIFICA FEEDBACK (1)" : $"INVIA FEEDBACK (1)")">
+                <MudPaper Elevation="0">
                     <MudStack Spacing="4">
+                        @if (isEditing)
+                        {
+                            <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Dense="true">Stai modificando un feedback esistente</MudAlert>
+                        }
+
                         <MudTextField @bind-Value="nome" Label="Il tuo Nome" Variant="Variant.Outlined" FullWidth="true" />
                         <MudSelect T="int" Label="Voto" @bind-Value="voto" Variant="Variant.Outlined">
                             <MudSelectItem Value="5">⭐⭐⭐⭐⭐</MudSelectItem>
@@ -25,48 +40,71 @@
                         <MudTextField @bind-Value="messaggio" Label="Messaggio" Variant="Variant.Outlined" Lines="4" FullWidth="true" />
 
                         <div class="d-flex gap-4">
-                            <MudButton Variant="Variant.Filled" Color="isEditing? Color.Warning: Color.Primary" Size="Size.Large" OnClick="SalvaFeedback" FullWidth="true">
-                                @(isEditing ? "Aggiorna Feedback" : "Invia Feedback")
+                            <MudButton Variant="Variant.Filled" Color="isEditing? Color.Warning: Color.Secondary" Size="Size.Large" OnClick="SalvaFeedback" FullWidth="true" DisableElevation="true">
+                                @(isEditing ? "AGGIORNA FEEDBACK" : "INVIA FEEDBACK")
                             </MudButton>
                             @if (isEditing)
                             {
-                                <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="AnnullaModifica">Annulla</MudButton>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="AnnullaModifica">ANNULLA</MudButton>
                             }
                         </div>
                     </MudStack>
                 </MudPaper>
             </MudTabPanel>
 
-            @* --- TAB 2: TABELLA CON AZIONI --- *@
-            <MudTabPanel Text="Visualizza Storico" Icon="@Icons.Material.Filled.History">
-                <MudTable Items="@listaFeedback" Hover="true" Dense="true" Height="400px" FixedHeader="true" Elevation="0">
-                    <HeaderContent>
-                        <MudTh>Data</MudTh>
-                        <MudTh>Nome</MudTh>
-                        <MudTh>Voto</MudTh>
-                        <MudTh>Messaggio</MudTh>
-                        <MudTh Style="text-align:right">Azioni</MudTh>
-                    </HeaderContent>
-                    <RowTemplate>
-                        <MudTd>@context.Data.ToShortDateString()</MudTd>
-                        <MudTd><b>@context.Nome</b></MudTd>
-                        <MudTd>@context.Voto ⭐</MudTd>
-                        <MudTd>@context.Messaggio</MudTd>
-                        <MudTd Style="text-align:right">
-                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Info" Size="Size.Small" OnClick="@(() => PreparaModifica(context))" />
-                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => EliminaRiga(context.Id))" />
-                        </MudTd>
-                    </RowTemplate>
-                </MudTable>
+            @* --- TAB 2: TABELLA --- *@
+            <MudTabPanel Text="@($"VISUALIZZA STORICO ({listaFeedback.Count})")">
+                @if (listaFeedback.Count == 0)
+                {
+                    <MudText Color="Color.Info" Class="mt-4">Nessun feedback disponibile.</MudText>
+                }
+                else
+                {
+                    <MudTable Items="@listaFeedback" Hover="true" Dense="true" Height="400px" FixedHeader="true" Elevation="0" Class="mt-4">
+                        <HeaderContent>
+                            <MudTh>Data</MudTh>
+                            <MudTh>Nome</MudTh>
+                            <MudTh>Voto</MudTh>
+                            <MudTh>Messaggio</MudTh>
+                            <MudTh Style="text-align:right">Azioni</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>@context.Data.ToShortDateString()</MudTd>
+                            <MudTd><b>@context.Nome</b></MudTd>
+                            <MudTd>@context.Voto ⭐</MudTd>
+                            <MudTd>@context.Messaggio</MudTd>
+                            <MudTd Style="text-align:right">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Info" Size="Size.Small" OnClick="@(() => PreparaModifica(context))" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => EliminaRiga(context.Id))" />
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
             </MudTabPanel>
         </MudTabs>
     </MudPaper>
 </MudContainer>
 
+<style>
+    /* CSS aggiuntivo per rendere il testo attivo più evidente */
+    .mud-tab-active-bold {
+        font-weight: 700 !important;
+        color: var(--mud-palette-secondary) !important;
+    }
+
+    .mud-tab {
+        justify-content: flex-start !important;
+        padding: 16px 24px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px;
+    }
+</style>
+
 @code {
+    // ... (Codice @code identico al tuo precedente)
     private string nome, messaggio, editId;
     private int voto = 5;
-    private bool isEditing = false, loading = true;
+    private bool isEditing = false;
     private List<FeedbackItem> listaFeedback = new();
 
     public class FeedbackItem
@@ -94,7 +132,6 @@
     private async Task SalvaFeedback()
     {
         if (string.IsNullOrWhiteSpace(nome)) return;
-
         if (isEditing)
         {
             var item = listaFeedback.FirstOrDefault(x => x.Id == editId);
@@ -105,7 +142,6 @@
         {
             listaFeedback.Insert(0, new FeedbackItem { Id = Guid.NewGuid().ToString(), Nome = nome, Voto = voto, Messaggio = messaggio, Data = DateTime.Now });
         }
-
         await SalvaSuFile();
         nome = ""; messaggio = ""; voto = 5;
         Snackbar.Add("Operazione completata!", Severity.Success);
@@ -115,14 +151,14 @@
     {
         nome = item.Nome; voto = item.Voto; messaggio = item.Messaggio; editId = item.Id;
         isEditing = true;
-        Snackbar.Add("Modalità modifica attivata. Vai al primo Tab.", Severity.Info);
+        Snackbar.Add("Dati caricati!", Severity.Info);
     }
 
     private async Task EliminaRiga(string id)
     {
         listaFeedback.RemoveAll(x => x.Id == id);
         await SalvaSuFile();
-        Snackbar.Add("Rimosso!", Severity.Error);
+        Snackbar.Add("Eliminato!", Severity.Error);
     }
 
     private async Task SalvaSuFile()
