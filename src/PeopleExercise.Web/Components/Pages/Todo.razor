@@ -1,4 +1,5 @@
 @page "/toDo"
+@page "/toDo/{TabId}"
 @implements IDisposable
 @inject ITodoStorageService TodoStorageService
 @inject NavigationManager NavigationManager
@@ -55,7 +56,7 @@
         </MudPaper>
     }
 
-    <MudTabs>
+    <MudTabs @bind-ActivePanelIndex="_activeTabIndex" Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
         <MudTabPanel Text=@($"Task Disponibili ({AvailableTasksCount})")>
             <MudStack Spacing="2" Class="todo-task-list">
                 @foreach (var task in AvailableTasks.ToList())
@@ -193,6 +194,8 @@
     private IEnumerable<TodoTaskItem> CompletedTasks => _tasks.Where(task => task.Completato);
     private int AvailableTasksCount => _tasks.Count(task => !task.Completato);
     private int CompletedTasksCount => _tasks.Count(task => task.Completato);
+    private int _activeTabIndex = 0; 
+ 
 
     protected override async Task OnInitializedAsync()
     {
@@ -442,4 +445,26 @@
         _clockTimer?.Dispose();
         _clockTimer = null;
     }
+    @code {
+    // Cattura l'eventuale "1" dall'URL /toDo/1
+    // L'attributo [Parameter] è fondamentale per leggere il valore dall'URL
+[Parameter] 
+public string? TabId { get; set; }
+
+private int _activeTabIndex = 0;
+    protected override void OnParametersSet()
+    {
+        // Se l'URL è /toDo/1, impostiamo l'indice a 1 (Task Conclusi)
+        if (TabId == "1")
+        {
+            _activeTabIndex = 1;
+        }
+        else
+        {
+            _activeTabIndex = 0;
+        }
+    }
+    
+    // ... resto del tuo codice esistente ...
+}
 }

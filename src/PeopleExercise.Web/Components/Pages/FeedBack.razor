@@ -3,6 +3,8 @@
 @using System.IO
 @inject IWebHostEnvironment Env
 @inject ISnackbar Snackbar
+@inject ITodoStorageService TodoStorageService
+@inject NavigationManager Nav
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
     <MudPaper Elevation="1" Class="pa-0">
@@ -30,6 +32,12 @@
                         }
 
                         <MudTextField @bind-Value="nome" Label="Il tuo Nome" Variant="Variant.Outlined" FullWidth="true" />
+                        <MudSelect T="string" Label="Collega a un Task (Opzionale)" @bind-Value="_taskId" Variant="Variant.Outlined" Clearable="true" Class="mb-4">
+                            @foreach (var t in _availableTasks)
+                            {
+                                <MudSelectItem Value="@t.Id.ToString()">@t.Obbiettivo</MudSelectItem>
+                            }
+                        </MudSelect>
                         <MudSelect T="int" Label="Voto" @bind-Value="voto" Variant="Variant.Outlined">
                             <MudSelectItem Value="5">⭐⭐⭐⭐⭐</MudSelectItem>
                             <MudSelectItem Value="4">⭐⭐⭐⭐</MudSelectItem>
@@ -72,7 +80,21 @@
                             <MudTd>@context.Data.ToShortDateString()</MudTd>
                             <MudTd><b>@context.Nome</b></MudTd>
                             <MudTd>@context.Voto ⭐</MudTd>
-                            <MudTd>@context.Messaggio</MudTd>
+                            <MudTd DataLabel="Messaggio">
+                                <div>@context.Messaggio</div>
+                                @if (!string.IsNullOrEmpty(context.AllegatoTaskTitolo))
+                                {
+                                    <MudChip T="string"
+                                             Size="Size.Small"
+                                             Color="Color.Info"
+                                             Variant="Variant.Text"
+                                             Icon="@Icons.Material.Filled.Link"
+                                             Style="cursor:pointer"
+                                             OnClick="@(() => VaiAlTask(context.AllegatoTaskId))">
+                                        Task: @context.AllegatoTaskTitolo
+                                    </MudChip>
+                                }
+                            </MudTd>
                             <MudTd Style="text-align:right">
                                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Info" Size="Size.Small" OnClick="@(() => PreparaModifica(context))" />
                                 <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => EliminaRiga(context.Id))" />
@@ -85,38 +107,39 @@
     </MudPaper>
 </MudContainer>
 
-<style>
-    /* CSS aggiuntivo per rendere il testo attivo più evidente */
-    .mud-tab-active-bold {
-        font-weight: 700 !important;
-        color: var(--mud-palette-secondary) !important;
-    }
 
-    .mud-tab {
-        justify-content: flex-start !important;
-        padding: 16px 24px !important;
-        text-transform: uppercase !important;
-        letter-spacing: 1px;
-    }
-</style>
+
+
+
 
 @code {
-    // ... (Codice @code identico al tuo precedente)
-    private string nome, messaggio, editId;
+    private string nome = "";
+    private string messaggio = "";
+    private string editId = "";
     private int voto = 5;
     private bool isEditing = false;
     private List<FeedbackItem> listaFeedback = new();
+    private string? _taskId;
+    private List<TodoTaskItem> _availableTasks = new();
 
     public class FeedbackItem
     {
-        public string Id { get; set; }
-        public string Nome { get; set; }
+        public string Id { get; set; } = "";
+        public string Nome { get; set; } = "";
         public int Voto { get; set; }
-        public string Messaggio { get; set; }
+        public string Messaggio { get; set; } = "";
         public DateTime Data { get; set; }
+        public string? AllegatoTaskId { get; set; }
+        public string? AllegatoTaskTitolo { get; set; }
     }
 
-    protected override async Task OnInitializedAsync() => await CaricaDati();
+    protected override async Task OnInitializedAsync()
+    {
+        await CaricaDati();
+
+        var tasks = await TodoStorageService.GetTasksAsync();
+        _availableTasks = tasks.ToList();
+    }
 
     private async Task CaricaDati()
     {
@@ -132,26 +155,56 @@
     private async Task SalvaFeedback()
     {
         if (string.IsNullOrWhiteSpace(nome)) return;
+
+
+        var Taskselezionato = _availableTasks.FirstOrDefault(t => t.Id.ToString() == _taskId);
+
         if (isEditing)
         {
             var item = listaFeedback.FirstOrDefault(x => x.Id == editId);
-            if (item != null) { item.Nome = nome; item.Voto = voto; item.Messaggio = messaggio; }
+            if (item != null)
+            {
+                item.Nome = nome;
+                item.Voto = voto;
+                item.Messaggio = messaggio;
+                item.AllegatoTaskId = _taskId;
+                item.AllegatoTaskTitolo = Taskselezionato?.Obbiettivo;
+            }
             isEditing = false;
         }
         else
         {
-            listaFeedback.Insert(0, new FeedbackItem { Id = Guid.NewGuid().ToString(), Nome = nome, Voto = voto, Messaggio = messaggio, Data = DateTime.Now });
+            listaFeedback.Insert(0, new FeedbackItem
+            {
+                Id = Guid.NewGuid().ToString(),
+                Nome = nome,
+                Voto = voto,
+                Messaggio = messaggio,
+                Data = DateTime.Now,
+                AllegatoTaskId = _taskId,
+                AllegatoTaskTitolo = Taskselezionato?.Obbiettivo
+            });
         }
+
         await SalvaSuFile();
-        nome = ""; messaggio = ""; voto = 5;
+        ResetForm();
         Snackbar.Add("Operazione completata!", Severity.Success);
     }
 
     private void PreparaModifica(FeedbackItem item)
     {
-        nome = item.Nome; voto = item.Voto; messaggio = item.Messaggio; editId = item.Id;
+        nome = item.Nome;
+        voto = item.Voto;
+        messaggio = item.Messaggio;
+        editId = item.Id;
+        _taskId = item.AllegatoTaskId; 
         isEditing = true;
         Snackbar.Add("Dati caricati!", Severity.Info);
+    }
+
+    private void ResetForm()
+    {
+        nome = ""; messaggio = ""; voto = 5; _taskId = null;
     }
 
     private async Task EliminaRiga(string id)
@@ -165,8 +218,18 @@
     {
         var folder = Path.Combine(Env.ContentRootPath, "Data", "feedbacks");
         if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
-        await File.WriteAllTextAsync(Path.Combine(folder, "feedback_history.json"), JsonSerializer.Serialize(listaFeedback, new JsonSerializerOptions { WriteIndented = true }));
+        await File.WriteAllTextAsync(Path.Combine(folder, "feedback_history.json"),
+            JsonSerializer.Serialize(listaFeedback, new JsonSerializerOptions { WriteIndented = true }));
     }
 
-    private void AnnullaModifica() { isEditing = false; nome = ""; messaggio = ""; voto = 5; }
+    private void AnnullaModifica() { isEditing = false; ResetForm(); }
+    private void VaiAlTask(string? taskId)
+    {
+        if (!string.IsNullOrEmpty(taskId))
+        {
+
+            Nav.NavigateTo($"/toDo/1");
+            StateHasChanged();
+        }
+    }
 }

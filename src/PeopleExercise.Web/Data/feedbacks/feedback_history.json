@@ -1,23 +1,38 @@
 [
   {
+    "Id": "ab68034a-8187-4456-89db-7ad451d751e6",
+    "Nome": "efsfewfewfe",
+    "Voto": 5,
+    "Messaggio": "wfsfwfswfwf",
+    "Data": "2026-03-02T15:12:19.598439+01:00",
+    "AllegatoTaskId": "99999999-9999-9999-9999-999999999999",
+    "AllegatoTaskTitolo": "Audit istanziazioni classe Comuni e rimozione usi superflui"
+  },
+  {
     "Id": "f9c",
     "Nome": "weffeswf",
     "Voto": 5,
     "Messaggio": "wefwef",
-    "Data": "2026-02-26T15:16:53.1334954+01:00"
+    "Data": "2026-02-26T15:16:53.1334954+01:00",
+    "AllegatoTaskId": null,
+    "AllegatoTaskTitolo": null
   },
   {
     "Id": null,
     "Nome": "rerfewf",
     "Voto": 5,
     "Messaggio": "ewfwfwefew",
-    "Data": "2026-02-26T15:11:26.2055541+01:00"
+    "Data": "2026-02-26T15:11:26.2055541+01:00",
+    "AllegatoTaskId": null,
+    "AllegatoTaskTitolo": null
   },
   {
     "Id": null,
     "Nome": "ewfer",
     "Voto": 1,
     "Messaggio": "efefefw",
-    "Data": "2026-02-26T15:11:15.0408484+01:00"
+    "Data": "2026-02-26T15:11:15.0408484+01:00",
+    "AllegatoTaskId": null,
+    "AllegatoTaskTitolo": null
   }
 ]
