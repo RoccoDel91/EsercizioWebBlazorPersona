@@ -228,7 +228,7 @@
         if (!string.IsNullOrEmpty(taskId))
         {
 
-            Nav.NavigateTo($"/toDo/1");
+            Nav.NavigateTo($"/toDo/1/{taskId}");
             StateHasChanged();
         }
     }

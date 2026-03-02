@@ -1,5 +1,6 @@
 @page "/toDo"
 @page "/toDo/{TabId}"
+@page "/toDo/{TabId}/{TaskIdToHighlight}"
 @implements IDisposable
 @inject ITodoStorageService TodoStorageService
 @inject NavigationManager NavigationManager
@@ -192,7 +193,8 @@
     private string? _newTaskError;
 
     // --- SEZIONE NAVIGAZIONE ---
-    [Parameter] public string? TabId { get; set; } // AGGIUNTO: Legge il valore dall'URL /toDo/{TabId}
+    [Parameter] public string? TabId { get; set; }
+    [Parameter] public string? TaskIdToHighlight { get; set; }// AGGIUNTO: Legge il valore dall'URL /toDo/{TabId}
     private int _activeTabIndex = 0; // AGGIUNTO: Gestisce l'indice dei Tab (0 = Disponibili, 1 = Conclusi)
 
     protected override void OnParametersSet() // AGGIUNTO: Scatta ogni volta che il parametro nell'URL cambia
@@ -338,11 +340,19 @@
     private static bool CanSuggestSolution(TodoTaskItem task) => 
         task.NoTimer || GetTotalWorkedDuration(task) >= TimeSpan.FromHours(1);
 
-    private static string GetTaskCardClass(TodoTaskItem task)
+    private string GetTaskCardClass(TodoTaskItem task)
     {
-        if (task.Completato) return "todo-task-card todo-task-card-completed";
-        if (task.OnGoing) return CanSuggestSolution(task) ? "todo-task-card todo-task-card-ready" : "todo-task-card todo-task-card-ongoing";
-        return "todo-task-card todo-task-card-available";
+        var baseClass = "todo-task-card";
+
+        // AGGIUNTO: Se l'ID corrisponde a quello nell'URL, aggiungi la classe 'highlight-task'
+        if (TaskIdToHighlight != null && task.Id.ToString() == TaskIdToHighlight)
+        {
+            baseClass += " highlight-task";
+        }
+
+        if (task.Completato) return $"{baseClass} todo-task-card-completed";
+        if (task.OnGoing) return CanSuggestSolution(task) ? $"{baseClass} todo-task-card-ready" : $"{baseClass} todo-task-card-ongoing";
+        return $"{baseClass} todo-task-card-available";
     }
 
     private static string GetOnGoingStatusText(TodoTaskItem task)
@@ -357,4 +367,29 @@
         task.Completato ? Color.Success : (!task.OnGoing ? Color.Default : (CanSuggestSolution(task) ? Color.Error : Color.Warning));
 
     private static string FormatDuration(TimeSpan d) => $"{(int)d.TotalHours:00}:{d.Minutes:00}:{d.Seconds:00}";
+
 }
+<style>
+    .highlight-task {
+        border: 2px solid #FFD700 !important; /* Oro/Giallo */
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+        animation: pulse-highlight 2s infinite;
+    }
+
+    @@keyframes pulse-highlight {
+        0%
+
+    {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.02);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+
+    }
+</style>
