@@ -190,13 +190,30 @@
     private string _newTaskHookToGuide = "todo.ui";
     private bool _newTaskOnGoing;
     private string? _newTaskError;
+
+    // --- SEZIONE NAVIGAZIONE ---
+    [Parameter] public string? TabId { get; set; } // AGGIUNTO: Legge il valore dall'URL /toDo/{TabId}
+    private int _activeTabIndex = 0; // AGGIUNTO: Gestisce l'indice dei Tab (0 = Disponibili, 1 = Conclusi)
+
+    protected override void OnParametersSet() // AGGIUNTO: Scatta ogni volta che il parametro nell'URL cambia
+    {
+        if (TabId == "1")
+        {
+            _activeTabIndex = 1; // Imposta Task Conclusi
+        }
+        else
+        {
+            _activeTabIndex = 0; // Imposta Task Disponibili
+        }
+    }
+
+    // --- PROPRIETÀ COMPUTATE ---
     private IEnumerable<TodoTaskItem> AvailableTasks => _tasks.Where(task => !task.Completato);
     private IEnumerable<TodoTaskItem> CompletedTasks => _tasks.Where(task => task.Completato);
     private int AvailableTasksCount => _tasks.Count(task => !task.Completato);
     private int CompletedTasksCount => _tasks.Count(task => task.Completato);
-    private int _activeTabIndex = 0; 
- 
 
+    // --- INIZIALIZZAZIONE ---
     protected override async Task OnInitializedAsync()
     {
         _tasks = (await TodoStorageService.GetTasksAsync()).ToList();
@@ -212,32 +229,27 @@
 
     private async Task RunClockRefreshAsync()
     {
-        var timer = _clockTimer;
-        if (timer is null)
-        {
-            return;
-        }
-
+        if (_clockTimer is null) return;
         try
         {
-            while (await timer.WaitForNextTickAsync())
+            while (await _clockTimer.WaitForNextTickAsync())
             {
                 await InvokeAsync(StateHasChanged);
             }
         }
-        catch (ObjectDisposedException)
-        {
-            // No-op: expected if timer is disposed while waiting.
-        }
+        catch (ObjectDisposedException) { }
     }
 
+    public void Dispose()
+    {
+        _clockTimer?.Dispose();
+        _clockTimer = null;
+    }
+
+    // --- LOGICA TASK ---
     private async Task OnTaskCheckedChanged(TodoTaskItem task, bool isChecked)
     {
-        if (task.Completato == isChecked)
-        {
-            return;
-        }
-
+        if (task.Completato == isChecked) return;
         task.Completato = isChecked;
 
         if (isChecked)
@@ -248,23 +260,9 @@
         await TodoStorageService.UpdateTaskAsync(task);
     }
 
-    private Task OnNewTaskObbiettivoChanged(string value)
-    {
-        _newTaskObbiettivo = value;
-        return Task.CompletedTask;
-    }
-
-    private Task OnNewTaskHookChanged(string value)
-    {
-        _newTaskHookToGuide = value;
-        return Task.CompletedTask;
-    }
-
-    private Task OnNewTaskOnGoingChanged(bool value)
-    {
-        _newTaskOnGoing = value;
-        return Task.CompletedTask;
-    }
+    private Task OnNewTaskObbiettivoChanged(string value) { _newTaskObbiettivo = value; return Task.CompletedTask; }
+    private Task OnNewTaskHookChanged(string value) { _newTaskHookToGuide = value; return Task.CompletedTask; }
+    private Task OnNewTaskOnGoingChanged(bool value) { _newTaskOnGoing = value; return Task.CompletedTask; }
 
     private async Task AddNewTaskAsync()
     {
@@ -276,22 +274,17 @@
         }
 
         _newTaskError = null;
-
         var newTask = new TodoTaskItem
         {
             Obbiettivo = obbiettivo,
             HookToGuide = string.IsNullOrWhiteSpace(_newTaskHookToGuide) ? "todo.ui" : _newTaskHookToGuide.Trim(),
             Completato = false,
             OnGoing = _newTaskOnGoing,
-            TempoDiLavoro = new TempoDiLavoro
-            {
-                Sessioni = []
-            }
+            TempoDiLavoro = new TempoDiLavoro { Sessioni = [] }
         };
 
         await TodoStorageService.AddNewTaskAsync(newTask);
         _tasks.Add(newTask);
-
         _newTaskObbiettivo = string.Empty;
         _newTaskHookToGuide = "todo.ui";
         _newTaskOnGoing = false;
@@ -299,11 +292,7 @@
 
     private async Task OnOnGoingChanged(TodoTaskItem task, bool isChecked)
     {
-        if (task.Completato)
-        {
-            return;
-        }
-
+        if (task.Completato) return;
         ApplyOnGoingChange(task, isChecked, DateTimeOffset.UtcNow);
         await TodoStorageService.UpdateTaskAsync(task);
     }
@@ -315,10 +304,9 @@
         return Task.CompletedTask;
     }
 
-    private static IntervalloLavoro? GetActiveSession(TodoTaskItem task)
-    {
-        return task.TempoDiLavoro?.Sessioni?.LastOrDefault(session => session.TimeStop is null);
-    }
+    // --- SUPPORTI ---
+    private static IntervalloLavoro? GetActiveSession(TodoTaskItem task) => 
+        task.TempoDiLavoro?.Sessioni?.LastOrDefault(s => s.TimeStop is null);
 
     private static void ApplyOnGoingChange(TodoTaskItem task, bool isChecked, DateTimeOffset timestamp)
     {
@@ -328,143 +316,45 @@
         if (isChecked)
         {
             task.OnGoing = true;
-            var activeSession = GetActiveSession(task);
-            if (activeSession is null)
-            {
-                task.TempoDiLavoro.Sessioni.Add(new IntervalloLavoro
-                {
-                    TimeStart = timestamp
-                });
-            }
-
-            return;
+            if (GetActiveSession(task) is null)
+                task.TempoDiLavoro.Sessioni.Add(new IntervalloLavoro { TimeStart = timestamp });
         }
-
-        task.OnGoing = false;
-        var openSession = GetActiveSession(task);
-        if (openSession is not null && openSession.TimeStop is null)
+        else
         {
-            openSession.TimeStop = timestamp;
+            task.OnGoing = false;
+            var openSession = GetActiveSession(task);
+            if (openSession is not null) openSession.TimeStop = timestamp;
         }
     }
 
     private static TimeSpan GetTotalWorkedDuration(TodoTaskItem task)
     {
-        if (task.TempoDiLavoro?.Sessioni is null || task.TempoDiLavoro.Sessioni.Count == 0)
-        {
-            return TimeSpan.Zero;
-        }
-
+        if (task.TempoDiLavoro?.Sessioni == null) return TimeSpan.Zero;
         var now = DateTimeOffset.UtcNow;
-        TimeSpan total = TimeSpan.Zero;
-
-        foreach (var session in task.TempoDiLavoro.Sessioni)
-        {
-            var sessionEnd = session.TimeStop ?? (task.OnGoing ? now : session.TimeStart);
-            if (sessionEnd <= session.TimeStart)
-            {
-                continue;
-            }
-
-            total += sessionEnd - session.TimeStart;
-        }
-
-        return total;
+        return task.TempoDiLavoro.Sessioni.Aggregate(TimeSpan.Zero, (acc, s) => 
+            acc + ((s.TimeStop ?? (task.OnGoing ? now : s.TimeStart)) - s.TimeStart));
     }
 
-    private static bool CanSuggestSolution(TodoTaskItem task)
-    {
-        if (task.NoTimer)
-        {
-            return true;
-        }
-
-        return GetTotalWorkedDuration(task) >= TimeSpan.FromHours(1);
-    }
+    private static bool CanSuggestSolution(TodoTaskItem task) => 
+        task.NoTimer || GetTotalWorkedDuration(task) >= TimeSpan.FromHours(1);
 
     private static string GetTaskCardClass(TodoTaskItem task)
     {
-        if (task.Completato)
-        {
-            return "todo-task-card todo-task-card-completed";
-        }
-
-        if (task.OnGoing)
-        {
-            return CanSuggestSolution(task)
-                ? "todo-task-card todo-task-card-ready"
-                : "todo-task-card todo-task-card-ongoing";
-        }
-
+        if (task.Completato) return "todo-task-card todo-task-card-completed";
+        if (task.OnGoing) return CanSuggestSolution(task) ? "todo-task-card todo-task-card-ready" : "todo-task-card todo-task-card-ongoing";
         return "todo-task-card todo-task-card-available";
     }
 
     private static string GetOnGoingStatusText(TodoTaskItem task)
     {
-        var totalDuration = GetTotalWorkedDuration(task);
-
-        if (task.Completato)
-        {
-            return totalDuration > TimeSpan.Zero
-                ? $"Stato: concluso. Tempo lavorato: {FormatDuration(totalDuration)}."
-                : "Stato: concluso.";
-        }
-
-        if (!task.OnGoing)
-        {
-            return totalDuration > TimeSpan.Zero
-                ? $"Stato: non in corso. Tempo lavorato: {FormatDuration(totalDuration)}."
-                : "Stato: non in corso.";
-        }
-
-        return $"OnGoing - tempo totale: {FormatDuration(totalDuration)}.";
+        var duration = FormatDuration(GetTotalWorkedDuration(task));
+        if (task.Completato) return $"Stato: concluso. Tempo: {duration}.";
+        if (!task.OnGoing) return $"Stato: non in corso. Tempo: {duration}.";
+        return $"OnGoing - Tempo: {duration}.";
     }
 
-    private static Color GetOnGoingStatusColor(TodoTaskItem task)
-    {
-        if (task.Completato)
-        {
-            return Color.Success;
-        }
+    private static Color GetOnGoingStatusColor(TodoTaskItem task) => 
+        task.Completato ? Color.Success : (!task.OnGoing ? Color.Default : (CanSuggestSolution(task) ? Color.Error : Color.Warning));
 
-        if (!task.OnGoing)
-        {
-            return Color.Success;
-        }
-
-        return CanSuggestSolution(task) ? Color.Error : Color.Warning;
-    }
-
-    private static string FormatDuration(TimeSpan duration)
-    {
-        return $"{(int)duration.TotalHours:00}:{duration.Minutes:00}:{duration.Seconds:00}";
-    }
-
-    public void Dispose()
-    {
-        _clockTimer?.Dispose();
-        _clockTimer = null;
-    }
-    @code {
-    // Cattura l'eventuale "1" dall'URL /toDo/1
-    // L'attributo [Parameter] è fondamentale per leggere il valore dall'URL
-[Parameter] 
-public string? TabId { get; set; }
-
-private int _activeTabIndex = 0;
-    protected override void OnParametersSet()
-    {
-        // Se l'URL è /toDo/1, impostiamo l'indice a 1 (Task Conclusi)
-        if (TabId == "1")
-        {
-            _activeTabIndex = 1;
-        }
-        else
-        {
-            _activeTabIndex = 0;
-        }
-    }
-    
-    // ... resto del tuo codice esistente ...
-}
+    private static string FormatDuration(TimeSpan d) => $"{(int)d.TotalHours:00}:{d.Minutes:00}:{d.Seconds:00}";
 }
