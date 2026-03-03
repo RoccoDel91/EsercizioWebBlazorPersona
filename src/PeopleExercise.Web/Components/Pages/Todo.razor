@@ -370,10 +370,60 @@
 
 }
 <style>
+    /* --- STRUTTURA GENERALE --- */
+    .todo-task-list {
+        margin-top: 1rem !important;
+    }
+
+    .todo-task-row {
+        width: 100% !important;
+        gap: 1.2rem !important;
+    }
+
+    /* --- LE CARD (STILE BASE) --- */
+    .todo-task-card {
+        border: 1px solid rgba(15, 23, 42, 0.18) !important;
+        border-left: 6px solid transparent !important;
+        border-radius: 12px !important;
+        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12) !important;
+        transition: transform 140ms ease, box-shadow 140ms ease !important;
+        margin-bottom: 12px !important;
+        overflow: hidden;
+    }
+
+        .todo-task-card:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.16) !important;
+        }
+
+    /* --- COLORI PER STATO --- */
+    .todo-task-card-available {
+        border-left-color: #2e7d32 !important;
+        background: linear-gradient(180deg, #f7fff8 0%, #e3f7e6 100%) !important;
+    }
+
+    .todo-task-card-ongoing {
+        border-left-color: #f59e0b !important;
+        background: linear-gradient(180deg, #fffdf7 0%, #fef3c7 100%) !important;
+    }
+
+    .todo-task-card-ready {
+        border-left-color: #dc2626 !important;
+        background: linear-gradient(180deg, #fff5f5 0%, #fee2e2 100%) !important;
+    }
+
+    .todo-task-card-completed {
+        border-left-color: #1f8b4c !important;
+        background: linear-gradient(180deg, #f4fff6 0%, #dbf5df 100%) !important;
+    }
+
+    /* --- EVIDENZIAZIONE (TASK SELEZIONATO) --- */
     .highlight-task {
-        border: 2px solid #FFD700 !important; /* Oro/Giallo */
-        box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+        border: 3px solid #FFD700 !important; /* Bordo più spesso per visibilità */
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.6) !important;
         animation: pulse-highlight 2s infinite;
+        position: relative;
+        z-index: 5;
     }
 
     @@keyframes pulse-highlight {
@@ -384,11 +434,37 @@
     }
 
     50% {
-        transform: scale(1.02);
+        transform: scale(1.015);
     }
 
     100% {
         transform: scale(1);
+    }
+
+    }
+
+    /* --- PULSANTE SUGGERIMENTO --- */
+    .todo-suggest-btn {
+        border-radius: 10px !important;
+        text-transform: none !important;
+        font-weight: 600 !important;
+        background: #16a34a !important;
+        color: white !important;
+        box-shadow: 0 4px 10px rgba(22, 163, 74, 0.3) !important;
+    }
+
+        .todo-suggest-btn:hover:not(.mud-button-disabled) {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+
+    /* --- RESPONSIVE --- */
+    @@media (max-width: 960px) {
+        .todo-task-row
+
+    {
+        flex-direction: column !important;
+        align-items: flex-start !important;
     }
 
     }

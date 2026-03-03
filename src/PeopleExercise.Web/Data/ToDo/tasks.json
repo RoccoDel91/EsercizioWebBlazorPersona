@@ -2,18 +2,31 @@
   {
     "id": "55555555-5555-5555-5555-555555555555",
     "obbiettivo": "Allineare classe Comuni con storage service e usare lista comuni su LuogoDiNascita",
-    "completato": true,
+    "completato": false,
     "onGoing": false,
     "noTimer": false,
     "tempoDiLavoro": {
-      "sessioni": []
+      "sessioni": [
+        {
+          "timeStart": "2026-03-03T15:05:11.3576847+00:00",
+          "timeStop": "2026-03-03T15:05:11.9885553+00:00"
+        },
+        {
+          "timeStart": "2026-03-03T15:26:05.1343131+00:00",
+          "timeStop": "2026-03-03T15:26:05.6577817+00:00"
+        },
+        {
+          "timeStart": "2026-03-03T16:18:22.2117086+00:00",
+          "timeStop": "2026-03-03T16:18:22.8583449+00:00"
+        }
+      ]
     },
     "hookToGuide": "todo.comuni.storage"
   },
   {
     "id": "66666666-6666-6666-6666-666666666666",
     "obbiettivo": "Gestire auto compilazione codice fiscale e validazioni del campo",
-    "completato": true,
+    "completato": false,
     "onGoing": false,
     "noTimer": false,
     "tempoDiLavoro": {
@@ -24,9 +37,9 @@
   {
     "id": "99999999-9999-9999-9999-999999999999",
     "obbiettivo": "Audit istanziazioni classe Comuni e rimozione usi superflui",
-    "completato": true,
+    "completato": false,
     "onGoing": false,
-    "noTimer": true,
+    "noTimer": false,
     "tempoDiLavoro": {
       "sessioni": []
     },
@@ -35,9 +48,9 @@
   {
     "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
     "obbiettivo": "Ottimizzare rendering lista Comuni (Autocomplete)",
-    "completato": true,
+    "completato": false,
     "onGoing": false,
-    "noTimer": true,
+    "noTimer": false,
     "tempoDiLavoro": {
       "sessioni": []
     },
