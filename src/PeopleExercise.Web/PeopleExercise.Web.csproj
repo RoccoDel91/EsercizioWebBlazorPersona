@@ -13,7 +13,6 @@
 
   <ItemGroup>
     <Folder Include="Data\feedbacks\" />
-    <Folder Include="Data\suggerimenti\" />
   </ItemGroup>
 
   <ProjectExtensions><VisualStudio><UserProperties /></VisualStudio></ProjectExtensions>
