@@ -1,0 +1,97 @@
+@page "/guide-hint/{Hook}"
+@inject IGuideHintService GuideHintService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+
+<MudPaper Class="guide-page pa-4">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="guide-toolbar">
+        <MudStack Row="true" Spacing="1">
+            <MudButton Variant="Variant.Outlined"
+                       StartIcon="@Icons.Material.Filled.ArrowBack"
+                       OnClick="BackToTodo">
+                Torna ai task
+            </MudButton>
+
+            <MudButton Variant="Variant.Outlined"
+                       StartIcon="@Icons.Material.Filled.Refresh"
+                       Disabled="@_isLoading"
+                       OnClick="ReloadHintAsync">
+                Ricarica
+            </MudButton>
+        </MudStack>
+
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.ContentCopy"
+                   Disabled="@_isLoading"
+                   OnClick="CopyAllAsync">
+            Copia testo
+        </MudButton>
+    </MudStack>
+
+    <MudText Typo="Typo.h5" Class="mt-4">Suggerimento esercizio</MudText>
+    <MudText Typo="Typo.caption" Color="Color.Secondary">Hook: @_hookNormalized</MudText>
+
+    @if (_isLoading)
+    {
+        <MudStack Class="mt-4" Row="true" AlignItems="AlignItems.Center" Spacing="1">
+            <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+            <MudText Typo="Typo.body2">Caricamento suggerimento...</MudText>
+        </MudStack>
+    }
+    else
+    {
+        <div class="guide-scroll mt-3">
+            <pre class="guide-content">@_hint</pre>
+        </div>
+    }
+</MudPaper>
+
+@code {
+    [Parameter]
+    public string Hook { get; set; } = string.Empty;
+
+    private string _hookNormalized = string.Empty;
+    private string _hint = string.Empty;
+    private bool _isLoading = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await ReloadHintAsync();
+    }
+
+    private async Task ReloadHintAsync()
+    {
+        _isLoading = true;
+        _hookNormalized = Uri.UnescapeDataString(Hook ?? string.Empty).Trim();
+
+        if (string.IsNullOrWhiteSpace(_hookNormalized))
+        {
+            _hint = "Hook non valido.";
+            _isLoading = false;
+            return;
+        }
+
+        _hint = await GuideHintService.GetHintByHookAsync(_hookNormalized);
+        _isLoading = false;
+    }
+
+    private async Task CopyAllAsync()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", _hint);
+            Snackbar.Add("Suggerimento copiato negli appunti.", Severity.Success);
+        }
+        catch
+        {
+            Snackbar.Add("Copia automatica non disponibile. Seleziona e copia manualmente.", Severity.Warning);
+        }
+    }
+
+    private void BackToTodo()
+    {
+        NavigationManager.NavigateTo("/toDo");
+    }
+}

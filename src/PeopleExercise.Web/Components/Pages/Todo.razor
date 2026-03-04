@@ -1,0 +1,465 @@
+@page "/toDo"
+@page "/toDo/{TabId}"
+@page "/toDo/{TabId}/{TaskIdToHighlight}"
+@implements IDisposable
+@inject ITodoStorageService TodoStorageService
+@inject NavigationManager NavigationManager
+
+<div class="todo-page">
+<MudPaper Class="pa-4">
+  
+    @if (_showTaskCreateForm)
+    {
+        <MudPaper Class="pa-4 mb-4" Outlined="true">
+            <MudText Typo="Typo.h6" Class="mb-2">Nuovo task</MudText>
+
+            <MudGrid>
+                <MudItem xs="12" md="5">
+                    <MudTextField T="string"
+                                  Label="Obbiettivo"
+                                  Value="@_newTaskObbiettivo"
+                                  ValueChanged="OnNewTaskObbiettivoChanged"
+                                  Immediate="true"
+                                  Required="true" />
+                </MudItem>
+
+                <MudItem xs="12" md="4">
+                    <MudTextField T="string"
+                                  Label="Hook guida"
+                                  Value="@_newTaskHookToGuide"
+                                  ValueChanged="OnNewTaskHookChanged"
+                                  Immediate="true"
+                                  Placeholder="todo.ui" />
+                </MudItem>
+
+                <MudItem xs="12" md="2">
+                    <MudCheckBox T="bool"
+                                 Value="@_newTaskOnGoing"
+                                 ValueChanged="OnNewTaskOnGoingChanged"
+                                 Label="OnGoing" />
+                </MudItem>
+
+                <MudItem xs="12" md="1" Class="d-flex align-center">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               OnClick="AddNewTaskAsync">
+                        Aggiungi
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+
+            @if (!string.IsNullOrWhiteSpace(_newTaskError))
+            {
+                <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-2">
+                    @_newTaskError
+                </MudAlert>
+            }
+        </MudPaper>
+    }
+
+    <MudTabs @bind-ActivePanelIndex="_activeTabIndex" Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+        <MudTabPanel Text=@($"Task Disponibili ({AvailableTasksCount})")>
+            <MudStack Spacing="2" Class="todo-task-list">
+                @foreach (var task in AvailableTasks.ToList())
+                {
+                    var canSuggest = CanSuggestSolution(task);
+                    <MudCard @key="task.Id" Class="@GetTaskCardClass(task)">
+                        <MudCardContent>
+                            <MudStack Row="true"
+                                      AlignItems="AlignItems.Center"
+                                      Justify="Justify.SpaceBetween"
+                                      Class="todo-task-row">
+                                <MudStack Spacing="0" Class="todo-task-content">
+                                    <MudCheckBox T="bool"
+                                                 Value="@task.Completato"
+                                                 ValueChanged="@(value => OnTaskCheckedChanged(task, value))"
+                                                 Label="@task.Obbiettivo" />
+
+                                    @if (!task.NoTimer)
+                                    {
+                                        <MudCheckBox T="bool"
+                                                     Value="@task.OnGoing"
+                                                     ValueChanged="@(value => OnOnGoingChanged(task, value))"
+                                                     Color="Color.Info"
+                                                     Label="OnGoing"
+                                                     Disabled="@task.Completato" />
+                                    }
+
+                                    <MudText Typo="Typo.caption" Color="@GetOnGoingStatusColor(task)">
+                                        @GetOnGoingStatusText(task)
+                                    </MudText>
+                                </MudStack>
+
+                                <MudStack Spacing="1" AlignItems="AlignItems.End" Class="todo-task-actions">
+                                    <MudButton Variant="Variant.Filled"
+                                               Class="todo-suggest-btn"
+                                               Disabled="@(!canSuggest)"
+                                               OnClick="@(() => OnSuggestSolutionClicked(task))">
+                                        Suggerisci soluzione
+                                    </MudButton>
+
+                                    @if (!canSuggest)
+                                    {
+                                        <MudText Typo="Typo.caption" Color="Color.Warning">
+                                            Disponibile dopo 1h di OnGoing.
+                                        </MudText>
+                                    }
+                                </MudStack>
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                }
+
+                @if (!AvailableTasks.Any())
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Nessun task disponibile.
+                    </MudText>
+                }
+            </MudStack>
+        </MudTabPanel>
+
+        <MudTabPanel Text=@($"Task Conclusi ({CompletedTasksCount})")>
+            <MudStack Spacing="2" Class="todo-task-list">
+                @foreach (var task in CompletedTasks.ToList())
+                {
+                    var canSuggest = CanSuggestSolution(task);
+                    <MudCard @key="task.Id" Class="@GetTaskCardClass(task)">
+                        <MudCardContent>
+                            <MudStack Row="true"
+                                      AlignItems="AlignItems.Center"
+                                      Justify="Justify.SpaceBetween"
+                                      Class="todo-task-row">
+                                <MudStack Spacing="0" Class="todo-task-content">
+                                    <MudCheckBox T="bool"
+                                                 Value="@task.Completato"
+                                                 ValueChanged="@(value => OnTaskCheckedChanged(task, value))"
+                                                 Label="@task.Obbiettivo" />
+
+                                    @if (!task.NoTimer)
+                                    {
+                                        <MudCheckBox T="bool"
+                                                     Value="@task.OnGoing"
+                                                     ValueChanged="@(value => OnOnGoingChanged(task, value))"
+                                                     Color="Color.Info"
+                                                     Label="OnGoing"
+                                                     Disabled="true" />
+                                    }
+
+                                    <MudText Typo="Typo.caption" Color="@GetOnGoingStatusColor(task)">
+                                        @GetOnGoingStatusText(task)
+                                    </MudText>
+                                </MudStack>
+
+                                <MudStack Spacing="1" AlignItems="AlignItems.End" Class="todo-task-actions">
+                                    <MudButton Variant="Variant.Filled"
+                                               Class="todo-suggest-btn"
+                                               Disabled="@(!canSuggest)"
+                                               OnClick="@(() => OnSuggestSolutionClicked(task))">
+                                        Suggerisci soluzione
+                                    </MudButton>
+
+                                    @if (!canSuggest)
+                                    {
+                                        <MudText Typo="Typo.caption" Color="Color.Warning">
+                                            Disponibile dopo 1h di OnGoing.
+                                        </MudText>
+                                    }
+                                </MudStack>
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                }
+
+                @if (!CompletedTasks.Any())
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Nessun task concluso.
+                    </MudText>
+                }
+            </MudStack>
+        </MudTabPanel>
+    </MudTabs>
+</MudPaper>
+</div>
+
+@code {
+    private bool _showTaskCreateForm = false;
+    private List<TodoTaskItem> _tasks = [];
+    private PeriodicTimer? _clockTimer;
+    private string _newTaskObbiettivo = string.Empty;
+    private string _newTaskHookToGuide = "todo.ui";
+    private bool _newTaskOnGoing;
+    private string? _newTaskError;
+
+    // --- SEZIONE NAVIGAZIONE ---
+    [Parameter] public string? TabId { get; set; }
+    [Parameter] public string? TaskIdToHighlight { get; set; }// AGGIUNTO: Legge il valore dall'URL /toDo/{TabId}
+    private int _activeTabIndex = 0; // AGGIUNTO: Gestisce l'indice dei Tab (0 = Disponibili, 1 = Conclusi)
+
+    protected override void OnParametersSet()
+    {
+        // Converte il TabId in intero, se fallisce o è diverso da 1, va a 0
+        _activeTabIndex = (TabId == "1") ? 1 : 0;
+    }
+
+    // --- PROPRIETÀ COMPUTATE ---
+    private IEnumerable<TodoTaskItem> AvailableTasks => _tasks.Where(task => !task.Completato);
+    private IEnumerable<TodoTaskItem> CompletedTasks => _tasks.Where(task => task.Completato);
+    private int AvailableTasksCount => _tasks.Count(task => !task.Completato);
+    private int CompletedTasksCount => _tasks.Count(task => task.Completato);
+
+    // --- INIZIALIZZAZIONE ---
+    protected override async Task OnInitializedAsync()
+    {
+        _tasks = (await TodoStorageService.GetTasksAsync()).ToList();
+        StartClockRefresh();
+    }
+
+    private void StartClockRefresh()
+    {
+        _clockTimer?.Dispose();
+        _clockTimer = new PeriodicTimer(TimeSpan.FromSeconds(30));
+        _ = RunClockRefreshAsync();
+    }
+
+    private async Task RunClockRefreshAsync()
+    {
+        if (_clockTimer is null) return;
+        try
+        {
+            while (await _clockTimer.WaitForNextTickAsync())
+            {
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (ObjectDisposedException) { }
+    }
+
+    public void Dispose()
+    {
+        _clockTimer?.Dispose();
+        _clockTimer = null;
+    }
+
+    // --- LOGICA TASK ---
+    private async Task OnTaskCheckedChanged(TodoTaskItem task, bool isChecked)
+    {
+        if (task.Completato == isChecked) return;
+        task.Completato = isChecked;
+
+        if (isChecked)
+        {
+            ApplyOnGoingChange(task, false, DateTimeOffset.UtcNow);
+        }
+
+        await TodoStorageService.UpdateTaskAsync(task);
+    }
+
+    private Task OnNewTaskObbiettivoChanged(string value) { _newTaskObbiettivo = value; return Task.CompletedTask; }
+    private Task OnNewTaskHookChanged(string value) { _newTaskHookToGuide = value; return Task.CompletedTask; }
+    private Task OnNewTaskOnGoingChanged(bool value) { _newTaskOnGoing = value; return Task.CompletedTask; }
+
+    private async Task AddNewTaskAsync()
+    {
+        var obbiettivo = _newTaskObbiettivo.Trim();
+        if (string.IsNullOrWhiteSpace(obbiettivo))
+        {
+            _newTaskError = "Inserisci un obbiettivo valido.";
+            return;
+        }
+
+        _newTaskError = null;
+        var newTask = new TodoTaskItem
+        {
+            Obbiettivo = obbiettivo,
+            HookToGuide = string.IsNullOrWhiteSpace(_newTaskHookToGuide) ? "todo.ui" : _newTaskHookToGuide.Trim(),
+            Completato = false,
+            OnGoing = _newTaskOnGoing,
+            TempoDiLavoro = new TempoDiLavoro { Sessioni = [] }
+        };
+
+        await TodoStorageService.AddNewTaskAsync(newTask);
+        _tasks.Add(newTask);
+        _newTaskObbiettivo = string.Empty;
+        _newTaskHookToGuide = "todo.ui";
+        _newTaskOnGoing = false;
+    }
+
+    private async Task OnOnGoingChanged(TodoTaskItem task, bool isChecked)
+    {
+        if (task.Completato) return;
+        ApplyOnGoingChange(task, isChecked, DateTimeOffset.UtcNow);
+        await TodoStorageService.UpdateTaskAsync(task);
+    }
+
+    private Task OnSuggestSolutionClicked(TodoTaskItem task)
+    {
+        var hook = Uri.EscapeDataString(task.HookToGuide);
+        NavigationManager.NavigateTo($"/guide-hint/{hook}");
+        return Task.CompletedTask;
+    }
+
+    // --- SUPPORTI ---
+    private static IntervalloLavoro? GetActiveSession(TodoTaskItem task) => 
+        task.TempoDiLavoro?.Sessioni?.LastOrDefault(s => s.TimeStop is null);
+
+    private static void ApplyOnGoingChange(TodoTaskItem task, bool isChecked, DateTimeOffset timestamp)
+    {
+        task.TempoDiLavoro ??= new TempoDiLavoro();
+        task.TempoDiLavoro.Sessioni ??= [];
+
+        if (isChecked)
+        {
+            task.OnGoing = true;
+            if (GetActiveSession(task) is null)
+                task.TempoDiLavoro.Sessioni.Add(new IntervalloLavoro { TimeStart = timestamp });
+        }
+        else
+        {
+            task.OnGoing = false;
+            var openSession = GetActiveSession(task);
+            if (openSession is not null) openSession.TimeStop = timestamp;
+        }
+    }
+
+    private static TimeSpan GetTotalWorkedDuration(TodoTaskItem task)
+    {
+        if (task.TempoDiLavoro?.Sessioni == null) return TimeSpan.Zero;
+        var now = DateTimeOffset.UtcNow;
+        return task.TempoDiLavoro.Sessioni.Aggregate(TimeSpan.Zero, (acc, s) => 
+            acc + ((s.TimeStop ?? (task.OnGoing ? now : s.TimeStart)) - s.TimeStart));
+    }
+
+    private static bool CanSuggestSolution(TodoTaskItem task) => 
+        task.NoTimer || GetTotalWorkedDuration(task) >= TimeSpan.FromHours(1);
+
+    private string GetTaskCardClass(TodoTaskItem task)
+    {
+        var baseClass = "todo-task-card";
+
+        // AGGIUNTO: Se l'ID corrisponde a quello nell'URL, aggiungi la classe 'highlight-task'
+        if (TaskIdToHighlight != null && task.Id.ToString() == TaskIdToHighlight)
+        {
+            baseClass += " highlight-task";
+        }
+
+        if (task.Completato) return $"{baseClass} todo-task-card-completed";
+        if (task.OnGoing) return CanSuggestSolution(task) ? $"{baseClass} todo-task-card-ready" : $"{baseClass} todo-task-card-ongoing";
+        return $"{baseClass} todo-task-card-available";
+    }
+
+    private static string GetOnGoingStatusText(TodoTaskItem task)
+    {
+        var duration = FormatDuration(GetTotalWorkedDuration(task));
+        if (task.Completato) return $"Stato: concluso. Tempo: {duration}.";
+        if (!task.OnGoing) return $"Stato: non in corso. Tempo: {duration}.";
+        return $"OnGoing - Tempo: {duration}.";
+    }
+
+    private static Color GetOnGoingStatusColor(TodoTaskItem task) => 
+        task.Completato ? Color.Success : (!task.OnGoing ? Color.Default : (CanSuggestSolution(task) ? Color.Error : Color.Warning));
+
+    private static string FormatDuration(TimeSpan d) => $"{(int)d.TotalHours:00}:{d.Minutes:00}:{d.Seconds:00}";
+
+}
+<style>
+    /* --- STRUTTURA GENERALE --- */
+    .todo-task-list {
+        margin-top: 1rem !important;
+    }
+
+    .todo-task-row {
+        width: 100% !important;
+        gap: 1.2rem !important;
+    }
+
+    /* --- LE CARD (STILE BASE) --- */
+    .todo-task-card {
+        border: 1px solid rgba(15, 23, 42, 0.18) !important;
+        border-left: 6px solid transparent !important;
+        border-radius: 12px !important;
+        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12) !important;
+        transition: transform 140ms ease, box-shadow 140ms ease !important;
+        margin-bottom: 12px !important;
+        overflow: hidden;
+    }
+
+        .todo-task-card:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.16) !important;
+        }
+
+    /* --- COLORI PER STATO --- */
+    .todo-task-card-available {
+        border-left-color: #2e7d32 !important;
+        background: linear-gradient(180deg, #f7fff8 0%, #e3f7e6 100%) !important;
+    }
+
+    .todo-task-card-ongoing {
+        border-left-color: #f59e0b !important;
+        background: linear-gradient(180deg, #fffdf7 0%, #fef3c7 100%) !important;
+    }
+
+    .todo-task-card-ready {
+        border-left-color: #dc2626 !important;
+        background: linear-gradient(180deg, #fff5f5 0%, #fee2e2 100%) !important;
+    }
+
+    .todo-task-card-completed {
+        border-left-color: #1f8b4c !important;
+        background: linear-gradient(180deg, #f4fff6 0%, #dbf5df 100%) !important;
+    }
+
+    /* --- EVIDENZIAZIONE (TASK SELEZIONATO) --- */
+    .highlight-task {
+        border: 3px solid #FFD700 !important; /* Bordo più spesso per visibilità */
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.6) !important;
+        animation: pulse-highlight 2s infinite;
+        position: relative;
+        z-index: 5;
+    }
+
+    @@keyframes pulse-highlight {
+        0%
+
+    {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.015);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+
+    }
+
+    /* --- PULSANTE SUGGERIMENTO --- */
+    .todo-suggest-btn {
+        border-radius: 10px !important;
+        text-transform: none !important;
+        font-weight: 600 !important;
+        background: #16a34a !important;
+        color: white !important;
+        box-shadow: 0 4px 10px rgba(22, 163, 74, 0.3) !important;
+    }
+
+        .todo-suggest-btn:hover:not(.mud-button-disabled) {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+
+    /* --- RESPONSIVE --- */
+    @@media (max-width: 960px) {
+        .todo-task-row
+
+    {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+
+    }
+</style>
