@@ -1,8 +1,6 @@
 ﻿@page "/feedback"
-
-@using System.IO
 @using System.Text.Json
-
+@using System.IO
 @inject IWebHostEnvironment Env
 @inject ISnackbar Snackbar
 @inject ITodoStorageService TodoStorageService
@@ -10,6 +8,12 @@
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
     <MudPaper Elevation="1" Class="pa-0">
+        @* Configurazione per tasti chiari:
+           - Elevation="0" e Outlined="false" per togliere l'effetto card interna
+           - Centered="false" (default) per allinearli a sinistra come in foto
+           - SliderColor="Color.Secondary" per la linea viola sotto
+           - Color="Color.Default" per mantenere il testo inattivo neutro
+        *@
         <MudTabs Elevation="0"
                  Rounded="false"
                  ApplyEffectsToContainer="true"
@@ -18,94 +22,53 @@
                  SliderColor="Color.Secondary"
                  ActiveTabClass="mud-primary-text mud-tab-active-bold">
 
+            @* --- TAB 1: INVIO / MODIFICA --- *@
             <MudTabPanel Text="@(isEditing ? $"MODIFICA FEEDBACK (1)" : $"INVIA FEEDBACK (1)")">
                 <MudPaper Elevation="0">
                     <MudStack Spacing="4">
-
                         @if (isEditing)
                         {
-                            <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Dense="true">
-                                Stai modificando un feedback esistente
-                            </MudAlert>
+                            <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Dense="true">Stai modificando un feedback esistente</MudAlert>
                         }
 
-                        <MudTextField @bind-Value="nome"
-                                      Label="Il tuo Nome"
-                                      Variant="Variant.Outlined"
-                                      FullWidth="true" />
-
-                        <MudSelect T="string"
-                                   Label="Collega a un Task (Opzionale)"
-                                   @bind-Value="_taskId"
-                                   Variant="Variant.Outlined"
-                                   Clearable="true"
-                                   Class="mb-4">
+                        <MudTextField @bind-Value="nome" Label="Il tuo Nome" Variant="Variant.Outlined" FullWidth="true" />
+                        <MudSelect T="string" Label="Collega a un Task (Opzionale)" @bind-Value="_taskId" Variant="Variant.Outlined" Clearable="true" Class="mb-4">
                             @foreach (var t in _availableTasks)
                             {
-                                <MudSelectItem Value="@t.Id.ToString()">
-                                    @t.Obbiettivo
-                                </MudSelectItem>
+                                <MudSelectItem Value="@t.Id.ToString()">@t.Obbiettivo</MudSelectItem>
                             }
                         </MudSelect>
-
-                        <MudSelect T="int"
-                                   Label="Voto"
-                                   @bind-Value="voto"
-                                   Variant="Variant.Outlined">
+                        <MudSelect T="int" Label="Voto" @bind-Value="voto" Variant="Variant.Outlined">
                             <MudSelectItem Value="5">⭐⭐⭐⭐⭐</MudSelectItem>
                             <MudSelectItem Value="4">⭐⭐⭐⭐</MudSelectItem>
                             <MudSelectItem Value="3">⭐⭐⭐</MudSelectItem>
                             <MudSelectItem Value="2">⭐⭐</MudSelectItem>
                             <MudSelectItem Value="1">⭐</MudSelectItem>
                         </MudSelect>
-
-                        <MudTextField @bind-Value="messaggio"
-                                      Label="Messaggio"
-                                      Variant="Variant.Outlined"
-                                      Lines="4"
-                                      FullWidth="true" />
+                        <MudTextField @bind-Value="messaggio" Label="Messaggio" Variant="Variant.Outlined" Lines="4" FullWidth="true" />
 
                         <div class="d-flex gap-4">
-                            <MudButton Variant="Variant.Filled"
-                                       Color="@(isEditing ? Color.Warning : Color.Secondary)"
-                                       Size="Size.Large"
-                                       OnClick="SalvaFeedback"
-                                       FullWidth="true"
-                                       DisableElevation="true">
+                            <MudButton Variant="Variant.Filled" Color="isEditing ? Color.Warning : Color.Secondary" Size="Size.Large" OnClick="SalvaFeedback" FullWidth="true" DisableElevation="true">
                                 @(isEditing ? "AGGIORNA FEEDBACK" : "INVIA FEEDBACK")
                             </MudButton>
-
                             @if (isEditing)
                             {
-                                <MudButton Variant="Variant.Outlined"
-                                           Color="Color.Default"
-                                           OnClick="AnnullaModifica">
-                                    ANNULLA
-                                </MudButton>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="AnnullaModifica">ANNULLA</MudButton>
                             }
                         </div>
-
                     </MudStack>
                 </MudPaper>
             </MudTabPanel>
 
+            @* --- TAB 2: TABELLA --- *@
             <MudTabPanel Text="@($"VISUALIZZA STORICO ({listaFeedback.Count})")">
                 @if (listaFeedback.Count == 0)
                 {
-                    <MudText Color="Color.Info" Class="mt-4">
-                        Nessun feedback disponibile.
-                    </MudText>
+                    <MudText Color="Color.Info" Class="mt-4">Nessun feedback disponibile.</MudText>
                 }
                 else
                 {
-                    <MudTable Items="@listaFeedback"
-                              Hover="true"
-                              Dense="true"
-                              Height="400px"
-                              FixedHeader="true"
-                              Elevation="0"
-                              Class="mt-4">
-
+                    <MudTable Items="@listaFeedback" Hover="true" Dense="true" Height="400px" FixedHeader="true" Elevation="0" Class="mt-4">
                         <HeaderContent>
                             <MudTh>Data</MudTh>
                             <MudTh>Nome</MudTh>
@@ -113,15 +76,12 @@
                             <MudTh>Messaggio</MudTh>
                             <MudTh Style="text-align:right">Azioni</MudTh>
                         </HeaderContent>
-
                         <RowTemplate>
                             <MudTd>@context.Data.ToShortDateString()</MudTd>
                             <MudTd><b>@context.Nome</b></MudTd>
                             <MudTd>@context.Voto ⭐</MudTd>
-
                             <MudTd DataLabel="Messaggio">
                                 <div>@context.Messaggio</div>
-
                                 @if (!string.IsNullOrEmpty(context.AllegatoTaskTitolo))
                                 {
                                     <MudChip T="string"
@@ -135,26 +95,22 @@
                                     </MudChip>
                                 }
                             </MudTd>
-
                             <MudTd Style="text-align:right">
-                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                               Color="Color.Info"
-                                               Size="Size.Small"
-                                               OnClick="@(() => PreparaModifica(context))" />
-
-                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                               Color="Color.Error"
-                                               Size="Size.Small"
-                                               OnClick="@(() => EliminaRiga(context.Id))" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Info" Size="Size.Small" OnClick="@(() => PreparaModifica(context))" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => EliminaRiga(context.Id))" />
                             </MudTd>
                         </RowTemplate>
                     </MudTable>
                 }
             </MudTabPanel>
-
         </MudTabs>
     </MudPaper>
 </MudContainer>
+
+
+
+
+
 
 @code {
     private string nome = "";
@@ -162,7 +118,6 @@
     private string editId = "";
     private int voto = 5;
     private bool isEditing = false;
-
     private List<FeedbackItem> listaFeedback = new();
     private string? _taskId;
     private List<TodoTaskItem> _availableTasks = new();
@@ -189,7 +144,6 @@
     private async Task CaricaDati()
     {
         var path = Path.Combine(Env.ContentRootPath, "Data", "feedbacks", "feedback_history.json");
-
         if (File.Exists(path))
         {
             var json = await File.ReadAllTextAsync(path);
@@ -200,24 +154,22 @@
 
     private async Task SalvaFeedback()
     {
-        if (string.IsNullOrWhiteSpace(nome))
-            return;
+        if (string.IsNullOrWhiteSpace(nome)) return;
 
-        var taskSelezionato = _availableTasks.FirstOrDefault(t => t.Id.ToString() == _taskId);
+
+        var Taskselezionato = _availableTasks.FirstOrDefault(t => t.Id.ToString() == _taskId);
 
         if (isEditing)
         {
             var item = listaFeedback.FirstOrDefault(x => x.Id == editId);
-
             if (item != null)
             {
                 item.Nome = nome;
                 item.Voto = voto;
                 item.Messaggio = messaggio;
                 item.AllegatoTaskId = _taskId;
-                item.AllegatoTaskTitolo = taskSelezionato?.Obbiettivo;
+                item.AllegatoTaskTitolo = Taskselezionato?.Obbiettivo;
             }
-
             isEditing = false;
         }
         else
@@ -230,7 +182,7 @@
                 Messaggio = messaggio,
                 Data = DateTime.Now,
                 AllegatoTaskId = _taskId,
-                AllegatoTaskTitolo = taskSelezionato?.Obbiettivo
+                AllegatoTaskTitolo = Taskselezionato?.Obbiettivo
             });
         }
 
@@ -247,16 +199,12 @@
         editId = item.Id;
         _taskId = item.AllegatoTaskId;
         isEditing = true;
-
         Snackbar.Add("Dati caricati!", Severity.Info);
     }
 
     private void ResetForm()
     {
-        nome = "";
-        messaggio = "";
-        voto = 5;
-        _taskId = null;
+        nome = ""; messaggio = ""; voto = 5; _taskId = null;
     }
 
     private async Task EliminaRiga(string id)
@@ -269,37 +217,29 @@
     private async Task SalvaSuFile()
     {
         var folder = Path.Combine(Env.ContentRootPath, "Data", "feedbacks");
-
-        if (!Directory.Exists(folder))
-            Directory.CreateDirectory(folder);
-
-        var path = Path.Combine(folder, "feedback_history.json");
-        var json = JsonSerializer.Serialize(listaFeedback, new JsonSerializerOptions
-        {
-            WriteIndented = true
-        });
-
-        await File.WriteAllTextAsync(path, json);
+        if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+        await File.WriteAllTextAsync(Path.Combine(folder, "feedback_history.json"),
+            JsonSerializer.Serialize(listaFeedback, new JsonSerializerOptions { WriteIndented = true }));
     }
 
-    private void AnnullaModifica()
-    {
-        isEditing = false;
-        ResetForm();
-    }
-
+    private void AnnullaModifica() { isEditing = false; ResetForm(); }
     private void VaiAlTask(string? taskId)
     {
-        if (string.IsNullOrEmpty(taskId))
-            return;
-
-        var task = _availableTasks.FirstOrDefault(t => t.Id.ToString() == taskId);
-
-        if (task != null)
+        if (!string.IsNullOrEmpty(taskId))
         {
-            string targetTab = task.Completato ? "1" : "0";
-            NavigationManager.NavigateTo($"/toDo/{targetTab}/{taskId}");
-            StateHasChanged();
+            // Usiamo la variabile _tasks che è già dichiarata nella tua pagina
+            var task = _availableTasks.FirstOrDefault(t => t.Id.ToString() == taskId);
+
+            if (task != null)
+            {
+                // Determiniamo il tab corretto
+                string targetTab = task.Completato ? "1" : "0";
+
+                // Usiamo NavigationManager (attenzione alle maiuscole/minuscole!)
+                NavigationManager.NavigateTo($"/toDo/{targetTab}/{taskId}");
+
+                StateHasChanged();
+            }
         }
     }
-    }
+}
