@@ -19,7 +19,7 @@
                  ApplyEffectsToContainer="true"
                  PanelClass="pa-6 mt-2"
                  Color="Color.Default"
-                 SliderColor="Color.Secondary"
+                 SliderColor="Color.Info"
                  ActiveTabClass="mud-primary-text mud-tab-active-bold">
 
             @* --- TAB 1: INVIO / MODIFICA --- *@
@@ -48,7 +48,7 @@
                         <MudTextField @bind-Value="messaggio" Label="Messaggio" Variant="Variant.Outlined" Lines="4" FullWidth="true" />
 
                         <div class="d-flex gap-4">
-                            <MudButton Variant="Variant.Filled" Color="isEditing ? Color.Warning : Color.Secondary" Size="Size.Large" OnClick="SalvaFeedback" FullWidth="true" DisableElevation="true">
+                            <MudButton Variant="Variant.Filled" Color="isEditing ? Color.Warning : Color.Primary" Size="Size.Large" OnClick="SalvaFeedback" FullWidth="true" DisableElevation="true">
                                 @(isEditing ? "AGGIORNA FEEDBACK" : "INVIA FEEDBACK")
                             </MudButton>
                             @if (isEditing)
@@ -98,6 +98,7 @@
                             <MudTd Style="text-align:right">
                                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Info" Size="Size.Small" OnClick="@(() => PreparaModifica(context))" />
                                 <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => EliminaRiga(context.Id))" />
+                                <MudIconButton Size="Size.Small" Icon=@Icons.Material.Filled.FolderOpen />
                             </MudTd>
                         </RowTemplate>
                     </MudTable>
@@ -132,7 +133,6 @@
         public string? AllegatoTaskId { get; set; }
         public string? AllegatoTaskTitolo { get; set; }
     }
-
     protected override async Task OnInitializedAsync()
     {
         await CaricaDati();

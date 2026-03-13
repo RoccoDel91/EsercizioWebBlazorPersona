@@ -31,7 +31,7 @@
                         <MudTextField @bind-Value="messaggio" Label="Descrivi il suggerimento" Variant="Variant.Outlined" Lines="5" FullWidth="true" />
 
                         <div class="d-flex gap-4">
-                            <MudButton Variant="Variant.Filled" Color="isEditing? Color.Warning: Color.Info" Size="Size.Large" OnClick="SalvaSuggerimento" FullWidth="true" DisableElevation="true">
+                            <MudButton Variant="Variant.Filled" Color="isEditing? Color.Warning: Color.Primary" Size="Size.Large" OnClick="SalvaSuggerimento" FullWidth="true" DisableElevation="true">
                                 @(isEditing ? "AGGIORNA IDEA" : "SALVA SUGGERIMENTO")
                             </MudButton>
                             @if (isEditing)
@@ -65,6 +65,7 @@
                             <MudTd Style="text-align:right">
                                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Info" Size="Size.Small" OnClick="@(() => PreparaModifica(context))" />
                                 <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => EliminaRiga(context.Id))" />
+                                <MudIconButton Size="Size.Small" Icon=@Icons.Material.Filled.FolderOpen />
                             </MudTd>
                         </RowTemplate>
                     </MudTable>
