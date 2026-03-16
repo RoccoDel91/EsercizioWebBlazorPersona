@@ -1,9 +1,11 @@
 @page "/toDo"
 @page "/toDo/{TabId}"
 @page "/toDo/{TabId}/{TaskIdToHighlight}"
-
+@using System.Diagnostics
+@using MudBlazor
+@inject ISnackbar Snackbar
 @implements IDisposable
-
+@inject IWebHostEnvironment Env
 @inject ITodoStorageService TodoStorageService
 @inject NavigationManager NavigationManager
 
@@ -24,6 +26,7 @@
                                       Immediate="true"
                                       Required="true" />
                     </MudItem>
+
 
                     <MudItem xs="12" md="4">
                         <MudTextField T="string"
@@ -83,7 +86,7 @@
                                                      Value="@task.Completato"
                                                      ValueChanged="@(value => OnTaskCheckedChanged(task, value))"
                                                      Label="@task.Obbiettivo" />
-
+                                        
                                         @if (!task.NoTimer)
                                         {
                                             <MudCheckBox T="bool"
@@ -97,6 +100,7 @@
                                         <MudText Typo="Typo.caption" Color="@GetOnGoingStatusColor(task)">
                                             @GetOnGoingStatusText(task)
                                         </MudText>
+                                        
                                     </MudStack>
 
                                     <MudStack Spacing="1" AlignItems="AlignItems.End" Class="todo-task-actions">
@@ -107,12 +111,16 @@
                                             Suggerisci soluzione
                                         </MudButton>
 
+
                                         @if (!canSuggest)
                                         {
                                             <MudText Typo="Typo.caption" Color="Color.Warning">
                                                 Disponibile dopo 1h di OnGoing.
                                             </MudText>
                                         }
+                                        <MudIconButton Size="Size.Small"
+                                                       Icon="@Icons.Material.Filled.FolderOpen"
+                                                       OnClick="@((_) => OnOpenFileClickedAsync())" />
                                     </MudStack>
                                 </MudStack>
                             </MudCardContent>
@@ -261,6 +269,31 @@
         }
         catch (ObjectDisposedException)
         {
+        }
+    }
+    private Task OnOpenFileClickedAsync()
+    {
+        try
+        {
+            var filePath = Path.Combine(Env.ContentRootPath, "Data", "ToDo", "tasks.json");
+
+            if (!File.Exists(filePath))
+            {
+                Snackbar.Add("File JSON non trovato.", Severity.Error);
+                return Task.CompletedTask;
+            }
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = filePath,
+                UseShellExecute = true
+            });
+
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Errore apertura file in Visual Studio: {ex.Message}", Severity.Error);
+            return Task.CompletedTask;
         }
     }
 
