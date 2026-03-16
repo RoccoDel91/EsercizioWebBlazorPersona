@@ -1,0 +1,291 @@
+﻿@page "/statistiche"
+@using MudBlazor
+@using System.Text.Json
+@using System.IO
+@inject IWebHostEnvironment Env
+
+<MudContainer MaxWidth="MaxWidth.False" Class="stats-page" >
+    <MudText Typo="Typo.h4" Class="mb-4">Statistiche Redditi Persone</MudText>
+
+
+    @if (!string.IsNullOrWhiteSpace(_errore))
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            @_errore
+        </MudAlert>
+    }
+    else if (_redditi.Length == 0)
+    {
+        <MudAlert Severity="Severity.Info" Class="mb-4">
+            Nessun dato disponibile.
+        </MudAlert>
+    }
+    else
+    {
+        <MudPaper Class="pa-6 chart-viewer" Elevation="2" Width="100%">
+            <MudText Typo="Typo.body1">
+                Date visualizzate: @Math.Min(_numeroPersoneDaMostrare, _tutteLePersone.Count)
+            </MudText>
+
+            <MudMenu Label="Scegli numero date"
+                     Variant="Variant.Filled"
+                     Color="Color.Primary">
+                <MudMenuItem OnClick="@(() => SelezionaNumeroPersone(2))">2 date</MudMenuItem>
+                <MudMenuItem OnClick="@(() => SelezionaNumeroPersone(4))">4 date</MudMenuItem>
+                <MudMenuItem OnClick="@(() => SelezionaNumeroPersone(6))">6 date</MudMenuItem>
+                <MudMenuItem OnClick="@(() => SelezionaNumeroPersone(8))">8 date</MudMenuItem>
+                <MudMenuItem OnClick="@(() => SelezionaNumeroPersone(10))">10 date</MudMenuItem>
+            </MudMenu>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+
+                <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
+                               Color="Color.Primary"
+                               Size="Size.Large"
+                               OnClick="PreviousChart" />
+
+                <MudText Typo="Typo.h6">@GetCurrentChartTitle()</MudText>
+
+                <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
+                               Color="Color.Primary"
+                               Size="Size.Large"
+                               OnClick="NextChart" />
+            </MudStack>
+            
+
+            @if (_chartIndex == 0)
+            {
+                
+                <MudChart ChartType="ChartType.Bar"
+                          ChartSeries="@_series"
+                          XAxisLabels="@_labels"
+                          Width="100%"
+                          Height="500px" />
+                
+                         
+            }
+            else if (_chartIndex == 1)
+            {
+                <MudChart ChartType="ChartType.Line"
+                          ChartSeries="@_series"
+                          XAxisLabels="@_labels"
+                          Width="100%"
+                          Height="500px" />
+                
+            }
+            else if (_chartIndex == 2)
+            {
+                <MudChart ChartType="ChartType.Pie"
+                          InputData="@_redditi"
+                          InputLabels="@_labels"
+                          Width="100%"
+                          Height="500px" />
+             
+            }
+            else if (_chartIndex == 3)
+            {
+                <MudChart ChartType="ChartType.Donut"
+                          InputData="@_redditi"
+                          InputLabels="@_labels"
+                          Width="100%"
+                          Height="500px" />
+                
+            }
+        </MudPaper>
+    }
+</MudContainer>
+
+    @code {
+
+    private string[] _labels = Array.Empty<string>();
+    private double[] _redditi = Array.Empty<double>();
+    private string[] _datelabels = Array.Empty<string>();
+    private List<ChartSeries> _series = new();
+    private string? _errore;
+    private List<PersonaItem> _tutteLePersone = new();
+    private int _numeroPersoneDaMostrare = 8;
+
+    public class PersonaItem
+    {
+        public string Id { get; set; } = "";
+        public string Nome { get; set; } = "";
+        public string Cognome { get; set; } = "";
+        public int Eta { get; set; }
+        public double Reddito { get; set; }
+        public DateTimeOffset? DataNascita { get; set; }
+        public string sesso { get; set; } = "";
+        public string LuogoDiNascita { get; set; } = "";
+        public string codiceFiscale { get; set; } = "";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // -> data: 2026-03-16
+            var folderPath = Path.Combine(Env.ContentRootPath, "Data", "People");
+
+            if (!Directory.Exists(folderPath))
+            {
+                _errore = $"Cartella non trovata: {folderPath}";
+                return;
+            }
+
+            var files = Directory.GetFiles(folderPath, "*.json");
+
+            if (files.Length == 0)
+            {
+                _errore = "Nessun file JSON trovato nella cartella Data/People.";
+                return;
+            }
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            var persone = new List<PersonaItem>();
+
+            foreach (var file in files)
+            {
+                try
+                {
+                    var json = await File.ReadAllTextAsync(file);
+                    var persona = JsonSerializer.Deserialize<PersonaItem>(json, options);
+
+                    if (persona is not null)
+                    {
+                        persone.Add(persona);
+                    }
+                }
+                catch
+                {
+                    // ignora file JSON non validi
+                }
+            }
+
+            if (persone.Count == 0)
+            {
+                _errore = "I file JSON trovati non contengono persone valide.";
+                return;
+            }
+
+            _tutteLePersone = persone
+                .OrderBy(p => p.DataNascita ?? DateTimeOffset.MaxValue)
+                .ToList();
+
+            AggiornaGrafici();
+        }
+        catch (Exception ex)
+        {
+            _errore = $"Errore caricamento statistiche: {ex.Message}";
+        }
+    }
+    // -> data: 2026-03-16
+    private int _chartIndex = 0;
+
+    // -> data: 2026-03-16
+    private void NextChart()
+    {
+        _chartIndex++;
+
+        if (_chartIndex > 3)
+            _chartIndex = 0;
+    }
+
+    // -> data: 2026-03-16
+    private void PreviousChart()
+    {
+        _chartIndex--;
+
+        if (_chartIndex < 0)
+            _chartIndex = 3;
+    }
+
+    // -> data: 2026-03-16
+    private string GetCurrentChartTitle()
+    {
+        return _chartIndex switch
+        {
+            0 => "Grafico a barre",
+            1 => "Grafico lineare",
+            2 => "Grafico a torta",
+            3 => "Grafico donut",
+            _ => "Grafico"
+        };
+    }
+    // -> data: 2026-03-16
+    // -> data: 2026-03-16
+    private static List<PersonaItem> BuildVisiblePeople(List<PersonaItem> persone, int maxVisibleItems = 6)
+    {
+        if (persone.Count == 0)
+            return new List<PersonaItem>();
+
+        if (persone.Count <= maxVisibleItems)
+            return persone;
+
+        var step = (int)Math.Ceiling((double)persone.Count / maxVisibleItems);
+
+        return persone
+            .Where((p, index) => index % step == 0)
+            .ToList();
+    }
+    // -> data: 2026-03-16
+    private void SelezionaNumeroPersone(int numero)
+    {
+        _numeroPersoneDaMostrare = numero;
+        AggiornaGrafici();
+    }
+
+    // -> data: 2026-03-16
+    private void AggiornaGrafici()
+    {
+        if (_tutteLePersone.Count == 0)
+        {
+            _labels = Array.Empty<string>();
+            _redditi = Array.Empty<double>();
+            _series = new List<ChartSeries>();
+            return;
+        }
+
+        var numeroEffettivo = Math.Min(_numeroPersoneDaMostrare, _tutteLePersone.Count);
+
+        var personeVisibili = _tutteLePersone
+            .Take(numeroEffettivo)
+            .ToList();
+
+        _labels = personeVisibili
+            .Select(p => p.DataNascita?.ToString("dd/MM/yyyy") ?? "")
+            .ToArray();
+
+        _redditi = personeVisibili
+            .Select(p => p.Reddito)
+            .ToArray();
+
+        _datelabels = _labels;
+
+        _series = new List<ChartSeries>
+    {
+        new ChartSeries
+        {
+            Name = "Reddito",
+            Data = _redditi
+        }
+    };
+    }
+}
+<style>
+    .stats-page {
+        width: 100% !important;
+        max-width: none !important;
+        padding-left: 16px;
+        padding-right: 16px;
+        margin: 0;
+    }
+
+    .chart-viewer {
+        width: 100% !important;
+        max-width: none !important;
+        min-height: calc(100vh - 180px);
+        box-sizing: border-box;
+    }
+</style>
