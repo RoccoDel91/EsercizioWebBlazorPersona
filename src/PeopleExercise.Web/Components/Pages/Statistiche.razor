@@ -81,15 +81,6 @@
                           Height="500px" />
              
             }
-            else if (_chartIndex == 3)
-            {
-                <MudChart ChartType="ChartType.Donut"
-                          InputData="@_redditi"
-                          InputLabels="@_labels"
-                          Width="100%"
-                          Height="500px" />
-                
-            }
         </MudPaper>
     }
 </MudContainer>
@@ -100,6 +91,9 @@
     private double[] _redditi = Array.Empty<double>();
     private string[] _datelabels = Array.Empty<string>();
     private List<ChartSeries> _series = new();
+    // -> Barre ai margini del grafico
+    private string[] _barLabels = Array.Empty<string>();
+    private List<ChartSeries> _barSeries = new();
     private string? _errore;
     private List<PersonaItem> _tutteLePersone = new();
     private int _numeroPersoneDaMostrare = 8;
@@ -188,7 +182,7 @@
     {
         _chartIndex++;
 
-        if (_chartIndex > 3)
+        if (_chartIndex > 2)
             _chartIndex = 0;
     }
 
@@ -198,7 +192,7 @@
         _chartIndex--;
 
         if (_chartIndex < 0)
-            _chartIndex = 3;
+            _chartIndex = 2;
     }
 
     // -> data: 2026-03-16
@@ -209,7 +203,6 @@
             0 => "Grafico a barre",
             1 => "Grafico lineare",
             2 => "Grafico a torta",
-            3 => "Grafico donut",
             _ => "Grafico"
         };
     }
@@ -244,6 +237,7 @@
             _labels = Array.Empty<string>();
             _redditi = Array.Empty<double>();
             _series = new List<ChartSeries>();
+
             return;
         }
 
@@ -287,5 +281,13 @@
         max-width: none !important;
         min-height: calc(100vh - 180px);
         box-sizing: border-box;
+    }
+    .stats-page .mud-charts-bar-series,
+    .stats-page .mud-charts-xaxis {
+        transform: scaleX(0.88);
+        transform-origin: center center;
+    }
+    .mud-chart-bar{
+        stroke-width: 50px;
     }
 </style>

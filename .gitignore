@@ -18,3 +18,15 @@ obj/
 # OS
 Thumbs.db
 .DS_Store
+
+# >>> AI local assistant >>>
+/.ai/
+/AGENTS.md
+/.vscode/tasks.json
+/dataBase/Documentazione/dbConn.txt
+/dataBase/plantUmlFiles/*.puml
+/dataBase/plantUmlFiles/*.svg
+/dataBase/*/Documentazione/dbConn.txt
+/dataBase/*/plantUmlFiles/*.puml
+/dataBase/*/plantUmlFiles/*.svg
+# <<< AI local assistant <<<
