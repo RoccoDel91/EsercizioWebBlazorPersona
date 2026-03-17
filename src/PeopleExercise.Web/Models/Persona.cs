@@ -24,9 +24,9 @@ public sealed class Persona
     [Range(typeof(decimal), "0", "999999999999", ErrorMessage = "Il reddito deve essere positivo.")]
     public decimal Reddito { get; set; }
 
+    [Required(ErrorMessage = "La data di nascita è obbligatoria")]
+    public DateTime? DataNascita { get; set; }
     [DataType(DataType.Date)]
-    public DateTime DataNascita { get; set; } = DateTime.MaxValue;
-
     [Required(ErrorMessage = "Il sesso è obbligatorio.")]
     [StringLength(1, ErrorMessage = "Il sesso non può superare un carattere.")]
     [RegularExpression("^[MFmf]$", ErrorMessage = "Inserire solo M o F")]

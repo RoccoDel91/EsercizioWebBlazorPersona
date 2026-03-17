@@ -1,10 +1,10 @@
 ﻿{
   "Id": "PSQLSN06T11A390Y",
-  "Nome": "alessandro",
+  "Nome": "Alessandro",
   "Cognome": "Pasqui",
-  "Eta": 12,
-  "Reddito": 3000,
-  "DataNascita": "2006-12-11T00:00:00+01:00",
+  "Eta": 0,
+  "Reddito": 0,
+  "DataNascita": "2006-12-11T00:00:00",
   "sesso": "M",
   "LuogoDiNascita": "Arezzo",
   "codiceFiscale": "PSQLSN06T11A390Y"

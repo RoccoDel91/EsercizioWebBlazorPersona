@@ -325,6 +325,7 @@ namespace PeopleExercise.Web.Components.Pages
             return Task.CompletedTask;
         }
 
+        // -> data: 2026-03-17
         private bool CanAutoCompileCodiceFiscale()
         {
             if (_editContext is null)
@@ -336,7 +337,7 @@ namespace PeopleExercise.Web.Components.Pages
                 string.IsNullOrWhiteSpace(_currentPerson.Cognome) ||
                 string.IsNullOrWhiteSpace(_currentPerson.sesso) ||
                 string.IsNullOrWhiteSpace(_currentPerson.LuogoDiNascita) ||
-                _currentPerson.DataNascita == DateTime.MaxValue)
+                !_currentPerson.DataNascita.HasValue)
             {
                 return false;
             }
@@ -347,7 +348,9 @@ namespace PeopleExercise.Web.Components.Pages
                 return false;
             }
 
-            if (!_comuniByName.ContainsKey(_currentPerson.LuogoDiNascita))
+            var luogo = _currentPerson.LuogoDiNascita.Trim();
+
+            if (!_comuniByName.ContainsKey(luogo))
             {
                 return false;
             }
@@ -355,27 +358,67 @@ namespace PeopleExercise.Web.Components.Pages
             return !HasFieldErrors(nameof(Persona.Nome)) &&
                    !HasFieldErrors(nameof(Persona.Cognome)) &&
                    !HasFieldErrors(nameof(Persona.sesso)) &&
-                   !HasFieldErrors(nameof(Persona.LuogoDiNascita));
+                   !HasFieldErrors(nameof(Persona.LuogoDiNascita)) &&
+                   !HasFieldErrors(nameof(Persona.DataNascita));
         }
 
+        // -> data: 2026-03-17
+        // -> data: 2026-03-17
         private bool TryBuildCodiceFiscale(Persona persona, out string codiceFiscale)
         {
             codiceFiscale = string.Empty;
 
-            if (!_comuniByName.TryGetValue(persona.LuogoDiNascita, out var codiceComune))
+            if (persona is null)
             {
                 return false;
             }
 
-            var utility = new Utility();
-            string parzialeNome = utility.calcoloNomeCognomeCodFiscale(persona.Nome, true);
-            string parzialeCognome = utility.calcoloNomeCognomeCodFiscale(persona.Cognome, false);
-            string parzialeData = utility.CalcolaDataSesso(persona.DataNascita, persona.sesso.ToUpperInvariant());
+            if (string.IsNullOrWhiteSpace(persona.Nome) ||
+                string.IsNullOrWhiteSpace(persona.Cognome) ||
+                string.IsNullOrWhiteSpace(persona.sesso) ||
+                string.IsNullOrWhiteSpace(persona.LuogoDiNascita) ||
+                !persona.DataNascita.HasValue)
+            {
+                return false;
+            }
 
-            string parziale = (parzialeCognome + parzialeNome + parzialeData + codiceComune).ToUpperInvariant();
-            string controllo = utility.CalcolaCarattereControllo(parziale);
-            codiceFiscale = parziale + controllo;
-            return true;
+            var luogo = persona.LuogoDiNascita.Trim();
+
+            if (!_comuniByName.TryGetValue(luogo, out var codiceComune))
+            {
+                return false;
+            }
+
+            var sessoNormalizzato = persona.sesso.Trim().ToUpperInvariant();
+
+            if (sessoNormalizzato is not "M" and not "F")
+            {
+                return false;
+            }
+
+            try
+            {
+                var utility = new Utility();
+
+                string parzialeNome = utility.calcoloNomeCognomeCodFiscale(persona.Nome, true);
+                string parzialeCognome = utility.calcoloNomeCognomeCodFiscale(persona.Cognome, false);
+                string parzialeData = utility.CalcolaDataSesso(persona.DataNascita.Value, sessoNormalizzato);
+
+                string parziale = (parzialeCognome + parzialeNome + parzialeData + codiceComune).ToUpperInvariant();
+
+                if (parziale.Length != 15)
+                {
+                    return false;
+                }
+
+                string controllo = utility.CalcolaCarattereControllo(parziale);
+                codiceFiscale = parziale + controllo;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private void ConfigureEditContext(EditContext editContext)
